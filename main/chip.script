@@ -1,0 +1,99 @@
+go.property("symb", 65)
+go.property("blink", 0)
+
+local normal_scale = 0.45		-- The normal render size
+local zoomed_scale = 0.6		-- When interacted with, zoom to this
+
+
+local type_plain = hash("plain")
+local type_striped_h = hash("striped-h")
+local type_striped_v = hash("striped-v")
+local type_wrapped = hash("wrapped")
+local type_bomb = hash("bomb")
+
+
+local function blink(self)
+	
+	local t
+	if self.blinking then
+		t = math.random() / 5 + 0.1
+	else
+		t = math.random(4) + 3
+	end
+	go.animate("#", "blink", go.PLAYBACK_ONCE_FORWARD, 1, go.EASING_LINEAR, t, 0, function(self)
+		if not self.blinking then
+			-- msg.post("#sprite-eyes", "disable")
+		else
+			-- msg.post("#sprite-eyes", "enable")
+		end
+		self.blinking = not self.blinking
+		blink(self)
+	end)
+end
+
+
+function init(self)
+	-- store original rotation
+	--
+	self.rot = go.get_rotation()
+
+	-- Render scaled down since atlas graphics is too large.
+	-- An alternative is to scale down the source material but working with
+	-- higher res images will show its benefits on retina screens.
+	--
+	go.set_scale(normal_scale)
+	msg.post("#", "sway")
+
+
+	label.set_text("#character", string.char( self.symb))
+	self.blinking = false
+	blink(self)
+end
+
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("respawn") then
+		--
+		-- Sometimes we reuse game objects
+		-- The "respawn" message is used for that.
+		--
+		go.set_position(message.position)
+		msg.post("#sprite", "enable")
+	elseif message_id == hash("sway") then
+		local rot = go.get(".", "euler.z")
+		go.set(".", "euler.z", rot - 1)
+		local t = (math.random() * 2) + 2
+		go.cancel_animations(".", "euler.z")
+		go.animate(".", "euler.z", go.PLAYBACK_LOOP_PINGPONG, rot + 1, go.EASING_INOUTQUAD, t)
+	elseif message_id == hash("zoom_and_wobble") then
+		--
+		-- Play a simple effect used to signal that we are 
+		-- interacting with the chip.
+		--
+		go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD, zoomed_scale, go.EASING_INOUTSINE, 0.1)
+		local rot = go.get(".", "euler.z")
+		local r = math.random() / 50
+		go.cancel_animations(".", "euler.z")
+		go.animate(".", "euler.z", go.PLAYBACK_LOOP_PINGPONG, rot - 4, go.EASING_INOUTSINE, 0.1 + r, 0.1)
+	elseif message_id == hash("reset") then
+		-- 
+		-- Reset the chip, meaning that we stop animation and
+		-- go back to normal scaling.
+		--
+		go.cancel_animations(".", "scale")
+		go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD, normal_scale, go.EASING_INOUTSINE, 0.1)
+		go.cancel_animations(".", "euler.z")
+		go.set_rotation(self.rot)
+		msg.post("#", "sway")
+	elseif message_id == hash("remove") then
+		--
+		-- This fish is being removed from the board.
+		-- Go out with a bang!
+		--
+		-- particlefx.play("#explosion")
+		--
+		-- Remove
+		--
+		go.delete()
+	end
+end
