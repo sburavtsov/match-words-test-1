@@ -1,8 +1,8 @@
 local blocksize = 96		-- Distance between block centers
 local edge = 80				-- Left and right edge.
 local bottom_edge = 80		-- Bottom edge.
-local boardwidth = 9		-- Number of columns
-local boardheight = 9		-- Number of rows
+local boardwidth = 7		-- Number of columns
+local boardheight = 7		-- Number of rows
 
 local type_plain = hash("plain")
 local type_striped_h = hash("striped-h")
@@ -43,11 +43,17 @@ local function build_board()
 	local pos = vmath.vector3()
 	local x = 0
 	local y = 0
-	for x = 0, boardwidth-  1 do
+	for x = 0, boardwidth - 1 do
 		pos.x = edge + blocksize / 2 + blocksize * x
 		board[x] = {}
-		for y = 0,boardheight-1 do
-			pos.y = bottom_edge + blocksize / 2 + blocksize * y
+		local vlimit = boardheight - 1
+		local displacement = 0
+		if (x % 2 ~= 0) then
+			vlimit = boardheight - 2
+			displacement = 0 --blocksize / 2
+		end
+		for y = 0, vlimit do
+			pos.y = bottom_edge + blocksize / 2 + blocksize * y + displacement
 			local ch = math.random(65,90)
 			local id = factory.create("#chip_factory", pos, nil, { symb = ch })
 			
@@ -86,6 +92,12 @@ local function collapse_board(board, callback)
 					--
 					board[x][y - dy] = board[x][y]
 					board[x][y] = nil
+
+					-- local ch = math.random(65,90)
+					-- local id = factory.create("#chip_factory", board[x][y].pos, nil, { symb = ch })
+
+					-- board[x][y] = { id = id, x = x, y = y, symb = ch, type = type }
+					
 					--
 					-- Calc new position and animate
 					---

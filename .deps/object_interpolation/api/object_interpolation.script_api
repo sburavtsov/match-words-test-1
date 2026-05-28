@@ -1,0 +1,25 @@
+- name: object_interpolation
+  type: table
+  desc: The Object Interpolation Component for Defold
+  members:
+  - name: set_enabled
+    type: function
+    desc: Default is `true`, and when `false`, transformation will be applied to objects immediately as if you just copy position and rotation values from the source object to the target object.
+    args:
+      - name: enabled
+        type: boolean
+
+  - name: is_enabled
+    type: function
+    desc: Check if the object interpolation is enabled (globally).
+    return:
+      - name: enabled
+        type: boolean
+
+  - name: APPLY_TRANSFORM_NONE
+    type: number
+    desc: No transformation applied to the target object.
+
+  - name: APPLY_TRANSFORM_TARGET
+    type: number
+    desc: Apply interpolation to the target object.
