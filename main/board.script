@@ -1,12 +1,12 @@
-local blocksize = 96		-- Distance between block centers
-local edge = 80				-- Left and right edge.
-local bottom_edge = 80		-- Bottom edge.
-local boardwidth = 7		-- Number of columns
-local boardheight = 7		-- Number of rows
+local BLOCKSIZE = 96
+local EDGE = 80
+local BOTTOM_EDGE = 80
+local BOARDWIDTH = 7
+local BOARDHEIGHT = 7
 
-local type_plain = hash("plain")
-local type_striped_h = hash("striped-h")
-local type_striped_v = hash("striped-v")
+local TYPE_PLAIN = hash("plain")
+local TYPE_STRIPED_H = hash("striped-h")
+local TYPE_STRIPED_V = hash("striped-v")
 -- local type_bomb = hash("bomb")
 
 
@@ -35,31 +35,31 @@ end
 --
 -- Each slot stores the id of the game object that sits there, the x and y
 -- position and the type, for easy searching. Storing the x and y position is
--- redundant but useful if we use the slots out of context, which we do at times. 
--- 
+-- redundant but useful if we use the slots out of context, which we do at times.
+--
 local function build_board()
 	local board = {}
 	math.randomseed(os.time())
 	local pos = vmath.vector3()
 	local x = 0
 	local y = 0
-	for x = 0, boardwidth - 1 do
-		pos.x = edge + blocksize / 2 + blocksize * x
+	for x = 0, BOARDWIDTH - 1 do
+		pos.x = EDGE + BLOCKSIZE / 2 + BLOCKSIZE * x
 		board[x] = {}
-		local vlimit = boardheight - 1
+		local vlimit = BOARDHEIGHT - 1
 		local displacement = 0
 		if (x % 2 ~= 0) then
-			vlimit = boardheight - 2
-			displacement = 0 --blocksize / 2
+			vlimit = BOARDHEIGHT - 2
+			displacement = 0 --BLOCKSIZE / 2
 		end
 		for y = 0, vlimit do
-			pos.y = bottom_edge + blocksize / 2 + blocksize * y + displacement
-			local ch = math.random(65,90)
+			pos.y = BOTTOM_EDGE + BLOCKSIZE / 2 + BLOCKSIZE * y + displacement
+local ch = math.random(65, 90)
 			local id = factory.create("#chip_factory", pos, nil, { symb = ch })
-			
-			board[x][y] = { id = id, x = x, y = y, symb = ch, type = type }
+
+			board[x][y] = { id = id, x = x, y = y, symb = ch, type = TYPE_PLAIN }
 		end
-	end	
+	end
 	return board
 end
 
@@ -74,17 +74,17 @@ local function collapse_board(board, callback)
 	-- Slide all remaining blocks down into blank (nil) spots.
 	-- Going column by column makes this easy.
 	--
-	-- Avoid some garbage creation by reusing these locals 
+	-- Avoid some garbage creation by reusing these locals
 	-- through the loops
 	--
 	local dy = 0
 	local pos = vmath.vector3()
-	for x = 0,boardwidth - 1 do
+	for x = 0, BOARDWIDTH - 1 do
 		--
 		-- Reset the drop down distance for each column
 		--
 		dy = 0
-		for y = 0,boardheight - 1 do
+		for y = 0, BOARDHEIGHT - 1 do
 			if board[x][y] ~= nil then
 				if dy > 0 then
 					--
@@ -97,12 +97,12 @@ local function collapse_board(board, callback)
 					-- local id = factory.create("#chip_factory", board[x][y].pos, nil, { symb = ch })
 
 					-- board[x][y] = { id = id, x = x, y = y, symb = ch, type = type }
-					
+
 					--
 					-- Calc new position and animate
 					---
 					board[x][y - dy].y = board[x][y - dy].y - dy
-					go.animate(board[x][y-dy].id, "position.y", go.PLAYBACK_ONCE_FORWARD, bottom_edge + blocksize / 2 + blocksize * (y - dy), go.EASING_OUTBOUNCE, duration)
+					go.animate(board[x][y-dy].id, "position.y", go.PLAYBACK_ONCE_FORWARD, BOTTOM_EDGE + BLOCKSIZE / 2 + BLOCKSIZE * (y - dy), go.EASING_OUTBOUNCE, duration)
 				end
 			else
 				--
@@ -112,7 +112,7 @@ local function collapse_board(board, callback)
 			end
 		end
 	end
-	
+
 end
 
 
@@ -125,11 +125,11 @@ local function iterate_chips(board)
 	return function()
 		repeat
 			y = y + 1
-			if x == boardwidth - 1 and y == boardheight then
+			if x == BOARDWIDTH - 1 and y == BOARDHEIGHT then
 				return nil
 			end
-			
-			if y == boardheight then
+
+			if y == BOARDHEIGHT then
 				y = 0
 				x = x + 1
 			end
@@ -149,7 +149,7 @@ local function remove_chip(board, chip)
 		-- other special effect takes place at the same time
 		return
 	end
-	
+
 	msg.post(chip.id, "remove")
 	--
 	-- Empty slots are set to nil so we can find them
@@ -159,8 +159,8 @@ local function remove_chip(board, chip)
 	--
 	-- Horisontal lineblast
 	--
---	if chip.type == type_striped_h then
---		for x=0, boardwidth -1 do
+--	if chip.type == TYPE_STRIPED_H then
+--		for x=0, BOARDWIDTH -1 do
 --			if board[x][chip.y] then
 --				remove_chip(board, board[x][chip.y])
 --			end
@@ -231,12 +231,12 @@ end
 --
 local function add_to_link(self, x, y)
 	-- outside board or empty
-	if x < 0 or x >= boardwidth or y < 0 or y >= boardheight or self.board[x][y] == nil then
+	if x < 0 or x >= BOARDWIDTH or y < 0 or y >= BOARDHEIGHT or self.board[x][y] == nil then
 		return
 	end
-	
+
 	local slot = self.board[x][y]
-	
+
 	-- add the first slot to the link without any checks
 	if #self.link == 0 then
 		msg.post(slot.id, "zoom_and_wobble")
@@ -252,7 +252,7 @@ local function add_to_link(self, x, y)
 		return
 	end
 	-- don't add slots of a different color
-	if last.color ~= slot.color then
+	if last.symb ~= slot.symb then
 		return
 	end
 	-- going back to the previous link
@@ -263,24 +263,24 @@ local function add_to_link(self, x, y)
 		return
 	end
 	-- don't try to add the same slot twice
-	for i=1,#self.link do
+	for i = 1, #self.link do
 		if self.link[i] == slot then
 			return
 		end
-	end	
+	end
 	-- the new slot is ok, add it
 	msg.post(slot.id, "zoom_and_wobble")
 	table.insert(self.link, slot)
 end
 
 
--- 
+--
 -- Find and return any empty slots.
 --
 local function empty_slots(board)
 	local slots = {}
-	for x = 0, boardwidth - 1 do
-		for y = 0, boardheight - 1 do
+	for x = 0, BOARDWIDTH - 1 do
+		for y = 0, BOARDHEIGHT - 1 do
 			if board[x][y] == nil then
 				--
 				-- The slot is nil/empty so we store this position in the
@@ -294,7 +294,7 @@ local function empty_slots(board)
 end
 
 --
--- Drop spawned chip to the board. Target the supplied slots. 
+-- Drop spawned chip to the board. Target the supplied slots.
 -- When done, call callback.
 --
 local function fill_slots(board, empty_slots, callback)
@@ -308,16 +308,16 @@ local function fill_slots(board, empty_slots, callback)
 		--
 		-- Calc the x position of this slot
 		--
-		pos.x = edge + blocksize / 2 + blocksize * s.x
+		pos.x = EDGE + BLOCKSIZE / 2 + BLOCKSIZE * s.x
 		--
 		-- Start above the screen so we can animate into place
-		-- 
+		--
 		pos.y = 1000
 		--
 		-- Pick a random chip
 		--
-		local symb = math.random(65, 91)
-		local type = type_plain
+		local symb = math.random(65, 90)
+		local type = TYPE_PLAIN
 		--
 		-- Create a new fish game object
 		--
@@ -325,7 +325,7 @@ local function fill_slots(board, empty_slots, callback)
 		--
 		-- Animate into the slot's calculated y position
 		--
-		go.animate(id, "position.y", go.PLAYBACK_ONCE_FORWARD, bottom_edge + blocksize / 2 + blocksize * s.y, go.EASING_OUTBOUNCE, duration)
+		go.animate(id, "position.y", go.PLAYBACK_ONCE_FORWARD, BOTTOM_EDGE + BLOCKSIZE / 2 + BLOCKSIZE * s.y, go.EASING_OUTBOUNCE, duration)
 		--
 		-- Store the new data in the slot (it was nil)
 		--
@@ -353,7 +353,7 @@ function on_message(self, message_id, message, sender)
 			-- Find empty slots
 			--
 			local s = empty_slots(self.board)
-			
+
 			--
 			-- If there are empty slots, fill them.
 			--
@@ -378,14 +378,14 @@ function on_input(self, action_id, action)
 		--
 		-- What block was touched?
 		--
-		local x = math.floor((world.x - edge) / blocksize)
-		local y = math.floor((world.y - edge) / blocksize)
-		
+		local x = math.floor((world.x - EDGE) / BLOCKSIZE)
+		local y = math.floor((world.y - EDGE) / BLOCKSIZE)
+
 		--
 		-- Try to add it to the link
 		--
 		add_to_link(self, x, y)
-		
+
 		-- Start linking
 		if action.pressed then
 			self.linking = true
