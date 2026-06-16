@@ -66,7 +66,7 @@ function dictionary_service.init(options)
 		}
 	}
 
-	local function add_word(payload, word, freq, filter_q)
+	local function add_word(pl, word, freq, filter_q)
 		word = tostring(word)
 
 		if options.force_ascii_upper ~= false then
@@ -86,12 +86,12 @@ function dictionary_service.init(options)
 				end
 			end
 
-			payload.valid_words[word] = true
-			payload.word_frequencies[word] = tonumber(freq) or 1.0
+			pl.valid_words[word] = true
+			pl.word_frequencies[word] = tonumber(freq) or 1.0
 
 			for j = 1, word_len do
 				local prefix = utils.utf8_sub(word, 1, j)
-				payload.prefixes[prefix] = true
+				pl.prefixes[prefix] = true
 			end
 
 		end

@@ -27,8 +27,4 @@ embedded_instances {
   "\"\n"
   "}\n"
   ""
-  position {
-    x: 512.0
-    y: 512.0
-  }
 }

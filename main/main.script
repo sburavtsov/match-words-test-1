@@ -10,8 +10,8 @@ local board_geometry = require("services.board_geometry")
 
 local CELL_WIDTH = 90
 local CELL_HEIGHT = 120
-local GRID_OFFSET_X = 100
-local GRID_OFFSET_Y = 300
+local GRID_OFFSET_X = -256
+local GRID_OFFSET_Y = 256
 
 -- ──────────────────────────────────────────────────
 -- Состояние игры
@@ -75,23 +75,7 @@ end
 
 function init(self)
 	-- 1. Загружаем словарь
-	game_state.dictionary = dictionary_service.init({
-		entries = {
-			{word = "CAT", freq = 100},
-			{word = "CATS", freq = 50},
-			{word = "STAR", freq = 70},
-			{word = "ART", freq = 60},
-			{word = "RAT", freq = 55},
-			{word = "TAR", freq = 45},
-			{word = "QUICK", freq = 10},
-			{word = "SAND", freq = 80},
-			{word = "STAND", freq = 65},
-			{word = "TRADE", freq = 75},
-			{word = "GRATE", freq = 40},
-			{word = "GREAT", freq = 85},
-			{word = "WATER", freq = 90}
-		}
-	})
+	game_state.dictionary = dictionary_service.init({csv_path = "/custom_resources/words/WordList_EN.csv"})
 
 	-- 2. Создаем игровое поле
 	game_state.board = board_service.init({
@@ -103,16 +87,18 @@ function init(self)
 		use_pity_joker = true
 	})
 
-	-- 3. Спавним визуальные тайлы
+	-- 3. Захватываем ввод
+	msg.post(".", "acquire_input_focus")
+
+	-- 4. Спавним визуальные тайлы
 	self.tile_factory = msg.url("#tile_factory")
 	--self.selected_marker = msg.url("main:/factories#selected_marker")
 
 	spawn_grid(self)
 
-	-- 4. Обновляем UI
+	-- 5. Обновляем UI
 	update_ui()
 
-	print("=== ИГРОВОЕ ПОЛЕ ИНИЦИАЛИЗИРОВАНО ===")
 	print(board_service.debug_dump(game_state.board))
 end
 
@@ -197,6 +183,7 @@ end
 -- ──────────────────────────────────────────────────
 
 function on_input(self, action_id, action)
+
 	-- Блокировка во время анимации
 	if game_state.is_animating then
 		return true
@@ -205,7 +192,7 @@ function on_input(self, action_id, action)
 	-- Начало тача/клика
 	if action_id == hash("touch") and action.pressed then
 		-- Проверяем, попали ли по тайлу
-		local hit = pick_tile(action.x, action.y)
+		local hit = pick_tile(action.screen_x, action.screen_y)
 		if hit then
 			try_select_tile(hit.x, hit.y)
 		end
@@ -237,7 +224,10 @@ end
 -- ──────────────────────────────────────────────────
 
 function pick_tile(screen_x, screen_y)
-	-- Простой AABB пикинг
+	local world = camera.screen_xy_to_world(screen_x, screen_y, "camera#camera")
+	local wx = world.x
+	local wy = world.y
+
 	local board = game_state.board.board
 
 	for x = 1, board.num_cols do
@@ -246,8 +236,8 @@ function pick_tile(screen_x, screen_y)
 			local half_w = CELL_WIDTH / 2
 			local half_h = CELL_HEIGHT / 2
 
-			if screen_x >= pos.x - half_w and screen_x <= pos.x + half_w
-			and screen_y >= pos.y - half_h and screen_y <= pos.y + half_h then
+			if wx >= pos.x - half_w and wx <= pos.x + half_w
+			and wy >= pos.y - half_h and wy <= pos.y + half_h then
 				return {x = x, y = y}
 			end
 		end
