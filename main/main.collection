@@ -33,3 +33,11 @@ embedded_instances {
   "}\n"
   ""
 }
+embedded_instances {
+  id: "hud"
+  data: "components {\n"
+  "  id: \"gui\"\n"
+  "  component: \"/main/hud.gui\"\n"
+  "}\n"
+  ""
+}

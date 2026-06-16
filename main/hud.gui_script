@@ -1,0 +1,42 @@
+local nodes = {}
+
+function init(self)
+	nodes.targets_text = gui.get_node("targets_text")
+	nodes.moves_text = gui.get_node("moves_text")
+	nodes.pending_text = gui.get_node("pending_text")
+	nodes.word_text = gui.get_node("word_text")
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("update_hud") then
+		local active_str = ""
+		if message.active_targets and #message.active_targets > 0 then
+			for i = 1, #message.active_targets do
+				if i > 1 then
+					active_str = active_str .. " "
+				end
+				active_str = active_str .. message.active_targets[i]
+			end
+		else
+			active_str = "—"
+		end
+		gui.set_text(nodes.targets_text, "Цели: " .. active_str)
+
+		gui.set_text(nodes.moves_text, "Ходы: " .. tostring(message.idle_moves or 0))
+
+		local pending_str = ""
+		if message.pending_targets and #message.pending_targets > 0 then
+			for i = 1, #message.pending_targets do
+				if i > 1 then
+					pending_str = pending_str .. " "
+				end
+				pending_str = pending_str .. message.pending_targets[i]
+			end
+		else
+			pending_str = "—"
+		end
+		gui.set_text(nodes.pending_text, "В очереди: " .. pending_str)
+
+		gui.set_text(nodes.word_text, message.current_word or "")
+	end
+end
