@@ -12,6 +12,7 @@ local CELL_WIDTH = 90
 local CELL_HEIGHT = 120
 local GRID_OFFSET_X = -256
 local GRID_OFFSET_Y = 256
+local TILE_SCALE = 0.45
 
 -- ──────────────────────────────────────────────────
 -- Состояние игры
@@ -471,7 +472,7 @@ function refresh_grid()
 				-- Анимация появления (только для новых клеток сверху)
 				go.set(id, "scale", vmath.vector3(0, 0, 1))
 				go.animate(id, "scale", go.PLAYBACK_ONCE_FORWARD,
-					vmath.vector3(1, 1, 1), go.EASING_OUTBACK, 0.3)
+					vmath.vector3(TILE_SCALE, TILE_SCALE, 1), go.EASING_OUTBACK, 0.3)
 
 				game_state.tile_objects[x][y] = id
 			end
