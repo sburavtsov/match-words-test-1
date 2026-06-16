@@ -9,16 +9,16 @@ embedded_components {
   "  x: 256.0\n"
   "  y: 256.0\n"
   "}\n"
-  "text: \"A\"\n"
-  "font: \"/builtins/fonts/default.font\"\n"
+  "text: \"\\320\\256\"\n"
+  "font: \"/assets/fonts/rum.font\"\n"
   "material: \"/builtins/fonts/label-df.material\"\n"
   ""
   position {
     z: 0.1
   }
   scale {
-    x: 8.0
-    y: 8.0
+    x: 10.0
+    y: 10.0
   }
 }
 embedded_components {

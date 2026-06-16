@@ -81,14 +81,20 @@ function init(self)
 	math.randomseed(math.floor(socket.gettime() * 1000000))
 
 	-- 1. Загружаем словарь
-	game_state.dictionary = dictionary_service.init({csv_path = "/custom_resources/words/WordList_EN.csv"})
+	game_state.dictionary = dictionary_service.init({
+		csv_path = "/custom_resources/words/WordList_EN.csv",
+		alphabet = RU_ALPHABET,
+		bg_weights = RU_BG_WEIGHTS
+})
 
 	-- 2. Создаем игровое поле
 	game_state.board = board_service.init({
 		dictionary = game_state.dictionary,
 		pattern = {7, 6, 7, 6, 7, 6, 7},
 		difficulty = 0.35,
-		target_letters = {"A", "S", "D", "F", "G", "H"},
+		--target_letters = {"A", "S", "D", "F", "G", "H"},
+		target_letters = {"Щ", "Ф", "Ц", "Э", "Ю"},
+		
 		use_random_joker = true,
 		use_pity_joker = true
 	})
