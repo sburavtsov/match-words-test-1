@@ -66,7 +66,7 @@ function spawn_grid()
 			local cell = grid[x][y]
 			if cell then
 				local pos = calculate_tile_position(x, y)
-local id = factory.create(game_state.tile_factory, pos, nil, nil, 1.0)
+			local id = factory.create(game_state.tile_factory, pos, nil, nil, 1.0)
 
 				game_state.tile_objects[x][y] = id
 				update_tile_visual(id, cell)
@@ -372,8 +372,7 @@ function confirm_move()
 
 		-- Анимация уничтожения пути
 		animate_destruction(game_state.selected_path, function()
-			-- После анимации обновляем сетку
-			refresh_grid()
+			animate_gravity_refill()
 
 			if result.is_win then
 				print("=== ПОБЕДА! ===")
@@ -404,9 +403,10 @@ function animate_destruction(path, callback)
 		local tile_id = game_state.tile_objects[p.x][p.y]
 
 		if tile_id then
-			-- Анимация исчезновения
 			go.animate(tile_id, "scale", go.PLAYBACK_ONCE_FORWARD,
 				vmath.vector3(0.1, 0.1, 1), go.EASING_OUTBACK, 0.2, 0, function()
+				go.delete(tile_id)
+				game_state.tile_objects[p.x][p.y] = nil
 				destroyed = destroyed + 1
 				if destroyed >= total and callback then
 					callback()
@@ -417,7 +417,6 @@ function animate_destruction(path, callback)
 		end
 	end
 
-	-- Если нет тайлов для анимации
 	if total == 0 and callback then
 		callback()
 	end
@@ -440,59 +439,75 @@ end
 -- Обновление сетки после хода
 -- ──────────────────────────────────────────────────
 
-function refresh_grid()
-	-- Удаляем старые тайлы
-	for x = 1, #game_state.tile_objects do
-		if game_state.tile_objects[x] then
-			for y = 1, #game_state.tile_objects[x] do
-				local obj = game_state.tile_objects[x][y]
-				if obj then
-					go.delete(obj)
-				end
-			end
-		end
-	end
-
-	game_state.tile_objects = {}
-
-	-- Пересоздаем сетку
+function animate_gravity_refill()
 	local board = game_state.board.board
 	local grid = game_state.board.grid
 
+	local anim_count = 0
+	local anim_done = 0
+
+	local function on_anim_done()
+		anim_done = anim_done + 1
+		if anim_done >= anim_count then
+			game_state.selected_path = {}
+			game_state.is_animating = false
+			update_ui()
+		end
+	end
+
 	for x = 1, board.num_cols do
-		game_state.tile_objects[x] = {}
+		local survivors = {}
+		for y = board.pattern[x], 1, -1 do
+			if game_state.tile_objects[x][y] then
+				table.insert(survivors, {
+					obj = game_state.tile_objects[x][y],
+					old_y = y
+				})
+			end
+		end
+
 		for y = 1, board.pattern[x] do
+			game_state.tile_objects[x][y] = nil
+		end
+
+		local target_y = board.pattern[x]
+		for i = 1, #survivors do
+			local s = survivors[i]
+			game_state.tile_objects[x][target_y] = s.obj
+
+			if s.old_y ~= target_y then
+				local pos = calculate_tile_position(x, target_y)
+				anim_count = anim_count + 1
+				go.animate(s.obj, "position", go.PLAYBACK_ONCE_FORWARD,
+					pos, go.EASING_OUTBOUNCE, 0.3, 0, on_anim_done)
+			end
+
+			target_y = target_y - 1
+		end
+
+		for y = target_y, 1, -1 do
 			local cell = grid[x][y]
 			if cell then
-				local pos = calculate_tile_position(x, y)
-				local id = factory.create(game_state.tile_factory, pos, nil, nil, 1.0)
-
+				local target_pos = calculate_tile_position(x, y)
+				local spawn_pos = vmath.vector3(target_pos.x, target_pos.y + CELL_HEIGHT * 3, 0)
+				local id = factory.create(game_state.tile_factory, spawn_pos, nil, nil, 1.0)
 				update_tile_visual(id, cell)
+				game_state.tile_objects[x][y] = id
 
-				-- Анимация появления (только для новых клеток сверху)
-				go.set(id, "scale", vmath.vector3(0, 0, 1))
+				anim_count = anim_count + 1
+				go.set(id, "scale", vmath.vector3(0.5, 0.5, 1))
+				go.animate(id, "position", go.PLAYBACK_ONCE_FORWARD,
+					target_pos, go.EASING_OUTEXPO, 0.4, 0, on_anim_done)
 				go.animate(id, "scale", go.PLAYBACK_ONCE_FORWARD,
 					vmath.vector3(TILE_SCALE, TILE_SCALE, 1), go.EASING_OUTBACK, 0.3)
-
-				game_state.tile_objects[x][y] = id
 			end
 		end
 	end
 
-	game_state.selected_path = {}
-	game_state.is_animating = false
-	update_ui()
-end
-
--- Последняя строка: on_message может принимать refresh_grid сообщения
-
--- ──────────────────────────────────────────────────
--- Обновление сетки (если нужно частичное обновление)
--- ──────────────────────────────────────────────────
-
-function on_message(self, message_id, message, sender)
-	if message_id == hash("refresh_grid") then
-		refresh_grid()
+	if anim_count == 0 then
+		game_state.selected_path = {}
+		game_state.is_animating = false
+		update_ui()
 	end
 end
 
