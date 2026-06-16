@@ -16,6 +16,11 @@ embedded_instances {
 }
 embedded_instances {
   id: "camera"
+  position {
+    x: 0.0
+    y: -50.0
+    z: 0.0
+  }
   data: "embedded_components {\n"
   "  id: \"camera\"\n"
   "  type: \"camera\"\n"

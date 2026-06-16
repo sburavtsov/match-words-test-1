@@ -23,7 +23,8 @@ local game_state = {
 	selected_path = {},    -- текущий выбранный путь игрока
 	tile_objects = {},     -- map[x][y] = url(go)
 	is_animating = false,   -- блокировка ввода во время анимации
-	mouse_down = false      -- зажат ли тач/клик
+	mouse_down = false,    -- зажат ли тач/клик
+	tile_factory = nil     -- url фабрики тайлов
 }
 
 -- ──────────────────────────────────────────────────
@@ -40,7 +41,7 @@ local game_state = {
 -- Спавн сетки тайлов
 -- ──────────────────────────────────────────────────
 
-function spawn_grid(self)
+function spawn_grid()
 	-- Очищаем старые тайлы
 	for x = 1, #game_state.tile_objects do
 		if game_state.tile_objects[x] then
@@ -64,7 +65,7 @@ function spawn_grid(self)
 			local cell = grid[x][y]
 			if cell then
 				local pos = calculate_tile_position(x, y)
-				local id = factory.create(self.tile_factory, pos, nil, nil, 1.0)
+local id = factory.create(game_state.tile_factory, pos, nil, nil, 1.0)
 
 				game_state.tile_objects[x][y] = id
 				update_tile_visual(id, cell)
@@ -95,10 +96,10 @@ function init(self)
 	msg.post(".", "acquire_input_focus")
 
 	-- 4. Спавним визуальные тайлы
-	self.tile_factory = msg.url("#tile_factory")
+	game_state.tile_factory = msg.url("#tile_factory")
 	--self.selected_marker = msg.url("main:/factories#selected_marker")
 
-	spawn_grid(self)
+	spawn_grid()
 
 	-- 5. Обновляем UI
 	update_ui()
@@ -463,7 +464,7 @@ function refresh_grid()
 			local cell = grid[x][y]
 			if cell then
 				local pos = calculate_tile_position(x, y)
-				local id = factory.create(self.tile_factory, pos, nil, nil, 1.0)
+				local id = factory.create(game_state.tile_factory, pos, nil, nil, 1.0)
 
 				update_tile_visual(id, cell)
 
@@ -481,6 +482,8 @@ function refresh_grid()
 	game_state.is_animating = false
 	update_ui()
 end
+
+-- Последняя строка: on_message может принимать refresh_grid сообщения
 
 -- ──────────────────────────────────────────────────
 -- Обновление сетки (если нужно частичное обновление)
