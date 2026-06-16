@@ -22,7 +22,8 @@ local game_state = {
 	dictionary = nil,      -- payload от dictionary_service
 	selected_path = {},    -- текущий выбранный путь игрока
 	tile_objects = {},     -- map[x][y] = url(go)
-	is_animating = false   -- блокировка ввода во время анимации
+	is_animating = false,   -- блокировка ввода во время анимации
+	mouse_down = false      -- зажат ли тач/клик
 }
 
 -- ──────────────────────────────────────────────────
@@ -187,33 +188,38 @@ end
 
 function on_input(self, action_id, action)
 
-	-- Блокировка во время анимации
 	if game_state.is_animating then
 		return true
 	end
 
-	-- Начало тача/клика
-	if action_id == hash("touch") and action.pressed then
-		-- Проверяем, попали ли по тайлу
-		local hit = pick_tile(action.screen_x, action.screen_y)
-		if hit then
-			try_select_tile(hit.x, hit.y)
+	if action_id == hash("touch") then
+		if action.pressed then
+			game_state.mouse_down = true
+			local hit = pick_tile(action.screen_x, action.screen_y)
+			if hit then
+				try_select_tile(hit.x, hit.y)
+			end
+			return true
+
+		elseif action.released then
+			game_state.mouse_down = false
+			if #game_state.selected_path >= 2 then
+				confirm_move()
+			else
+				clear_selection()
+			end
+			return true
+
+		elseif game_state.mouse_down then
+			local hit = pick_tile(action.screen_x, action.screen_y)
+			if hit then
+				try_select_tile(hit.x, hit.y)
+			end
+			return true
 		end
-		return true
+
 	end
 
-	-- Отпускание тача/клика -> подтверждение хода
-	if action_id == hash("touch") and action.released then
-		if #game_state.selected_path >= 2 then
-			confirm_move()
-		else
-			-- Слишком короткое слово - сброс выделения
-			clear_selection()
-		end
-		return true
-	end
-
-	-- Отмена выделения (ESC или правая кнопка)
 	if action_id == hash("cancel") and action.pressed then
 		clear_selection()
 		return true
