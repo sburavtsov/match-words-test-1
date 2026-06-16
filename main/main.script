@@ -474,6 +474,7 @@ function animate_gravity_refill()
 		for i = 1, #survivors do
 			local s = survivors[i]
 			game_state.tile_objects[x][target_y] = s.obj
+			update_tile_visual(s.obj, grid[x][target_y])
 
 			if s.old_y ~= target_y then
 				local pos = calculate_tile_position(x, target_y)

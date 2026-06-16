@@ -207,11 +207,14 @@ end
 
 function board_service.spawn_target(state)
 	if #state.pending_targets == 0 then
+		print("TARGET: no pending targets left")
 		return false
 	end
 
 	local current_targets = count_targets(state)
+	print("TARGET: current on board=" .. current_targets .. ", pending=" .. #state.pending_targets)
 	if current_targets >= 3 then
+		print("TARGET: too many on board (>=3)")
 		return false
 	end
 
@@ -219,6 +222,7 @@ function board_service.spawn_target(state)
 	local prob = math.max(0.0, base_prob - 0.4 * current_targets)
 
 	if math.random() >= prob then
+		print("TARGET: probability check failed (prob=" .. prob .. ")")
 		return false
 	end
 
@@ -248,6 +252,7 @@ function board_service.spawn_target(state)
 	end
 
 	if #available_cols == 0 then
+		print("TARGET: no available columns for spawn")
 		return false
 	end
 
@@ -265,11 +270,14 @@ function board_service.spawn_target(state)
 	end
 
 	if #candidates == 0 then
+		print("TARGET: no candidates in upper half of column " .. chosen_x)
 		return false
 	end
 
 	local chosen_y = candidates[math.random(1, #candidates)]
 	local target_char = table.remove(state.pending_targets, 1)
+
+	print("TARGET: placed '" .. target_char .. "' at (" .. chosen_x .. "," .. chosen_y .. "), remaining=" .. #state.pending_targets)
 
 	state.grid[chosen_x][chosen_y] = cell_factory.create_cell(state.board, {
 		char = target_char,
