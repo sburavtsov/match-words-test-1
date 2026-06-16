@@ -1,0 +1,85 @@
+script: "/main/hud.gui_script"
+fonts {
+  name: "system_font"
+  font: "/builtins/fonts/default.font"
+}
+fonts {
+  name: "rum"
+  font: "/assets/fonts/rum.font"
+}
+nodes {
+  position {
+    x: 20.0
+    y: 1061.0
+  }
+  size {
+    x: 500.0
+    y: 30.0
+  }
+  type: TYPE_TEXT
+  text: "\320\246\320\265\320\273\320\270: \342\200\224"
+  font: "rum"
+  id: "targets_text"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_BOTTOM
+  pivot: PIVOT_NW
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 20.0
+    y: 1096.0
+  }
+  size {
+    x: 500.0
+    y: 30.0
+  }
+  type: TYPE_TEXT
+  text: "\320\245\320\276\320\264\321\213: 0"
+  font: "rum"
+  id: "moves_text"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_BOTTOM
+  pivot: PIVOT_NW
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 20.0
+    y: 1131.0
+  }
+  size {
+    x: 500.0
+    y: 30.0
+  }
+  type: TYPE_TEXT
+  text: "\320\222 \320\276\321\207\320\265\321\200\320\265\320\264\320\270: 0"
+  font: "rum"
+  id: "pending_text"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_BOTTOM
+  pivot: PIVOT_NW
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 465.0
+    y: 1056.0
+  }
+  scale {
+    x: 1.5
+    y: 1.5
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_TEXT
+  font: "rum"
+  id: "word_text"
+  yanchor: YANCHOR_BOTTOM
+  pivot: PIVOT_S
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

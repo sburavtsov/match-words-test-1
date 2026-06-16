@@ -21,7 +21,7 @@ local cell_factory = {}
 -- Constants
 -- ──────────────────────────────────────────────────
 
-local CHAR_JOKER = "!"
+local CHAR_JOKER = "@"
 local JOKER_RANDOM = "random"
 local JOKER_PITY = "pity"
 
@@ -115,9 +115,9 @@ end
 function cell_factory.get_constants()
 	return {
 		CHAR_JOKER = CHAR_JOKER,
-		BOOSTER_BOMB = "Ю",
-		BOOSTER_LINE = "⚡",
-		BOOSTER_COLOR = "§",
+		BOOSTER_BOMB = "§",
+		BOOSTER_LINE = "±",
+		BOOSTER_COLOR = "#",
 		JOKER_RANDOM = JOKER_RANDOM,
 		JOKER_PITY = JOKER_PITY
 	}
