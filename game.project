@@ -1,10 +1,12 @@
 [project]
 title = MW1
 version = 0.0.1
+custom_resources = custom_resources
 dependencies#0 = https://github.com/britzl/monarch/archive/refs/tags/6.0.1.zip
 dependencies#1 = https://github.com/indiesoftby/defold-object-interpolation/archive/refs/tags/1.3.1.zip
 dependencies#2 = https://github.com/indiesoftby/defold-sharp-sprite/archive/refs/tags/1.0.0.zip
 dependencies#3 = https://github.com/thejustinwalsh/defold-xmath/archive/refs/heads/main.zip
+dependencies#4 = https://github.com/britzl/defold-richtext/archive/refs/tags/5.22.1.zip
 
 [bootstrap]
 main_collection = /main/main.collectionc

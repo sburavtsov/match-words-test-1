@@ -1,3 +1,19 @@
+local csvloader = require("utils.csvloader")
+local dictionary_service = require("services.dictionary_service")
+local board_service = require("services.board_service")
+local move_resolver = require("services.move_resolver")
+
+-- local files = require("imports.files")
+-- local uniquechars = require("imports.uniquechars")
+
+local languages = {}
+languages.en = "English"
+languages.fr = "Français / French"
+languages.ko = "한국어 / Korean"
+languages.zh = "中文 / Chinese"
+
+
+
 local BLOCKSIZE = 96
 local EDGE = 80
 local BOTTOM_EDGE = 80
@@ -22,6 +38,62 @@ function init(self)
 	--
 	msg.post("#", "start_level")
 	msg.post(".", "acquire_input_focus")
+
+	local csv = csvloader.load_resource("/custom_resources/words/WordList_RU.csv")
+
+
+	-- 1. Load dictionary
+	local dictionary = dictionary_service.init({
+		entries = {
+			{word = "CAT", freq = 100},
+			{word = "CATS", freq = 50},
+			{word = "STAR", freq = 70},
+			{word = "ART", freq = 60},
+			{word = "RAT", freq = 55},
+			{word = "TAR", freq = 45},
+			{word = "QUICK", freq = 10}
+		}
+	})
+
+	-- 2. Initialize board
+	self.board = board_service.init({
+		dictionary = dictionary,
+		pattern = {7, 6, 7, 6, 7, 6, 7, 6, 7},
+		difficulty = 0.35,
+		target_letters = {"A", "S", "D", "F", "G"},
+		use_random_joker = true,
+		use_pity_joker = true
+	})
+
+	print("=== INITIAL BOARD ===")
+	print(board_service.debug_dump(self.board))
+
+	-- 3. Simulate a player move
+	-- You'll need to replace these coordinates with actual player input
+	local test_coords = {
+		{x = 3, y = 5},
+		{x = 3, y = 4},
+		{x = 4, y = 4}
+	}
+
+	local result = move_resolver.resolve(self.board, test_coords, dictionary)
+
+	if result.ok then
+		print("=== MOVE RESOLVED ===")
+		print("Word:", result.chosen_word)
+		print("Valid words:", table.concat(result.valid_words, ", "))
+		print("Targets collected:", result.targets_collected_now)
+		print("Total collected:", result.total_targets_collected)
+		print("Remaining:", result.targets_remaining)
+		print("Booster:", result.booster_created or "none")
+		print("Pity joker:", tostring(result.pity_injected))
+		print("Win:", tostring(result.is_win))
+		print("=== BOARD AFTER ===")
+		print(board_service.debug_dump(self.board))
+	else
+		print("Move rejected:", result.error)
+	end
+
 end
 
 --

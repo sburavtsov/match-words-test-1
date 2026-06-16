@@ -1,0 +1,96 @@
+--[[
+dictionary_service.lua
+
+Handles:
+- Loading and parsing word entries from CSV or raw data
+- Building prefix sets for DFS pruning
+- Providing alphabet and word frequency tables
+- No game state, pure data preparation
+
+Usage:
+local dictionary = dictionary_service.init({
+	entries = {{word = "CAT", freq = 100}, ...},
+	force_ascii_upper = true
+})
+]]--
+
+local utils = require("shared.utils")
+
+local dictionary_service = {}
+
+-- ──────────────────────────────────────────────────
+-- Default English alphabet and weights
+-- ──────────────────────────────────────────────────
+
+local DEFAULT_ALPHABET = {
+	"A","B","C","D","E","F","G","H","I","J","K","L","M",
+	"N","O","P","Q","R","S","T","U","V","W","X","Y","Z"
+}
+
+local DEFAULT_BG_WEIGHTS = {
+	vowels = {
+		letters = {"E","A","O","I","U","Y"},
+		weights = {40, 30, 25, 20, 8, 3}
+	},
+	consonants = {
+		letters = {"S","T","R","N","L","D","C","M","P","H","G","B","F","W","K","V","J","X","Z","Q"},
+		weights = {30, 30, 25, 25, 20, 15, 15, 12, 12, 10, 8, 6, 5, 5, 3, 1, 1, 1, 1, 1}
+	}
+}
+
+-- ──────────────────────────────────────────────────
+-- Public API
+-- ──────────────────────────────────────────────────
+
+function dictionary_service.init(options)
+	options = options or {}
+
+	local payload = {
+		valid_words = {},
+		prefixes = {},
+		word_frequencies = {},
+		alphabet = options.alphabet or utils.copy_array(DEFAULT_ALPHABET),
+		bg_weights = options.bg_weights or {
+			vowels = {
+				letters = utils.copy_array(DEFAULT_BG_WEIGHTS.vowels.letters),
+				weights = utils.copy_array(DEFAULT_BG_WEIGHTS.vowels.weights)
+			},
+			consonants = {
+				letters = utils.copy_array(DEFAULT_BG_WEIGHTS.consonants.letters),
+				weights = utils.copy_array(DEFAULT_BG_WEIGHTS.consonants.weights)
+			}
+		}
+	}
+
+	local entries = options.entries or {}
+
+	for i = 1, #entries do
+		local entry = entries[i]
+		local word = tostring(entry.word or "")
+
+		if options.force_ascii_upper ~= false then
+			word = string.upper(word)
+		end
+
+		local word_len = utils.utf8_len(word)
+
+		if word_len >= 3 then
+			local has_q = word:find("Q", 1, true) ~= nil
+			local has_qu = word:find("QU", 1, true) ~= nil
+
+			if (not has_q) or has_qu then
+				payload.valid_words[word] = true
+				payload.word_frequencies[word] = tonumber(entry.freq) or 1.0
+
+				for j = 1, word_len do
+					local prefix = utils.utf8_sub(word, 1, j)
+					payload.prefixes[prefix] = true
+				end
+			end
+		end
+	end
+
+	return payload
+end
+
+return dictionary_service
