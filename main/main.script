@@ -74,6 +74,9 @@ end
 
 
 function init(self)
+	-- Инициализируем генератор случайных чисел
+	math.randomseed(math.floor(socket.gettime() * 1000000))
+
 	-- 1. Загружаем словарь
 	game_state.dictionary = dictionary_service.init({csv_path = "/custom_resources/words/WordList_EN.csv"})
 
