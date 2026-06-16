@@ -91,9 +91,9 @@ function init(self)
 	game_state.board = board_service.init({
 		dictionary = game_state.dictionary,
 		pattern = {7, 6, 7, 6, 7, 6, 7},
-		difficulty = 0.35,
+		difficulty = 0.0,
 		--target_letters = {"A", "S", "D", "F", "G", "H"},
-		target_letters = {"Щ", "Ф", "Ц", "Э", "Ю"},
+		target_letters = {"Б", "Д", "К", "У", "З"},
 		
 		use_random_joker = true,
 		use_pity_joker = true

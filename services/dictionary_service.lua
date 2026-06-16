@@ -48,12 +48,12 @@ DEFAULT_BG_WEIGHTS = {
 
 RU_BG_WEIGHTS = {
 	vowels = {
-		letters = {"О","Е","А","И","У","Я","Ы","Ю","Э","Ё"},
-		weights = {40, 30, 25, 20, 8, 5, 5, 3, 2, 1}
+		letters = {"О","Е","А","И","У","Я","Ы","Ю","Э"},
+		weights = { 40, 30, 25, 20, 8,  5,  5,  3,  2}
 	},
 	consonants = {
-		letters = {"Н","Т","Р","С","Л","В","К","П","М","Д","Б","Г","З","Ч","Й","Х","Ж","Ш","Ц","Щ","Ф","Ь"},
-		weights = {30, 30,  25, 25, 20, 15, 15, 12, 12, 10, 8,  6,  6,  5,  5,  3,  2,  2,  1,  1,  1,  1}
+		letters = {"Н","Т","Р","С","Л","В","К","П","М","Д","Б","Г","З","Ч","Й","Х","Ж","Ш","Ц","Щ","Ф","Ь","Ъ"},
+		weights = {30, 30,  25, 25, 20, 15, 15, 12, 12, 10, 8,  6,  6,  5,  5,  3,  2,  2,  1,  1,  1,  1,  0}
 	}
 }
 
@@ -173,7 +173,7 @@ function dictionary_service.init(options)
 						local freq = tonumber(fields[3])
 						local flag = tonumber(fields[4])
 
-						if word and flag == 1 and leng and leng >= 3 then
+						if word and leng and leng >= 3 then
 							add_word(payload, word, freq or 0, false)
 						end
 
