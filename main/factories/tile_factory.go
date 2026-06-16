@@ -1,6 +1,6 @@
 components {
   id: "script"
-  component: "/main/chip.script"
+  component: "/main/factories/tile.script"
 }
 embedded_components {
   id: "character"

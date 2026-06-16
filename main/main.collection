@@ -1,21 +1,26 @@
 name: "main"
 scale_along_z: 0
 embedded_instances {
-  id: "board"
+  id: "main"
   data: "components {\n"
   "  id: \"script\"\n"
-  "  component: \"/main/board.script\"\n"
+  "  component: \"/main/main.script\"\n"
   "}\n"
   "embedded_components {\n"
-  "  id: \"chip_factory\"\n"
+  "  id: \"tile_factory\"\n"
   "  type: \"factory\"\n"
-  "  data: \"prototype: \\\"/main/chip.go\\\"\\n"
+  "  data: \"prototype: \\\"/main/factories/tile_factory.go\\\"\\n"
   "\"\n"
   "}\n"
   ""
 }
 embedded_instances {
   id: "camera"
+  position {
+    x: 0.0
+    y: -50.0
+    z: 0.0
+  }
   data: "embedded_components {\n"
   "  id: \"camera\"\n"
   "  type: \"camera\"\n"
@@ -27,8 +32,4 @@ embedded_instances {
   "\"\n"
   "}\n"
   ""
-  position {
-    x: 512.0
-    y: 512.0
-  }
 }

@@ -1,0 +1,530 @@
+-- game.script
+local board_service = require("services.board_service")
+local move_resolver = require("services.move_resolver")
+local dictionary_service = require("services.dictionary_service")
+local board_geometry = require("services.board_geometry")
+
+-- ──────────────────────────────────────────────────
+-- Конфигурация рендера
+-- ──────────────────────────────────────────────────
+
+local CELL_WIDTH = 90
+local CELL_HEIGHT = 120
+local GRID_OFFSET_X = -256
+local GRID_OFFSET_Y = 256
+local TILE_SCALE = 0.45
+
+-- ──────────────────────────────────────────────────
+-- Состояние игры
+-- ──────────────────────────────────────────────────
+
+local game_state = {
+	board = nil,           -- state от board_service
+	dictionary = nil,      -- payload от dictionary_service
+	selected_path = {},    -- текущий выбранный путь игрока
+	tile_objects = {},     -- map[x][y] = url(go)
+	is_animating = false,   -- блокировка ввода во время анимации
+	mouse_down = false,    -- зажат ли тач/клик
+	tile_factory = nil     -- url фабрики тайлов
+}
+
+-- ──────────────────────────────────────────────────
+-- Фабрика тайлов (должна быть в коллекции)
+-- ──────────────────────────────────────────────────
+-- go.property("tile_factory", resource.hash("/main/tile_factory"))
+-- go.property("selected_marker", resource.hash("/main/selected_marker"))
+
+-- ──────────────────────────────────────────────────
+-- Инициализация
+-- ──────────────────────────────────────────────────
+
+-- ──────────────────────────────────────────────────
+-- Спавн сетки тайлов
+-- ──────────────────────────────────────────────────
+
+function spawn_grid()
+	-- Очищаем старые тайлы
+	for x = 1, #game_state.tile_objects do
+		if game_state.tile_objects[x] then
+			for y = 1, #game_state.tile_objects[x] do
+				local obj = game_state.tile_objects[x][y]
+				if obj then
+					go.delete(obj)
+				end
+			end
+		end
+	end
+
+	game_state.tile_objects = {}
+
+	local board = game_state.board.board
+	local grid = game_state.board.grid
+
+	for x = 1, board.num_cols do
+		game_state.tile_objects[x] = {}
+		for y = 1, board.pattern[x] do
+			local cell = grid[x][y]
+			if cell then
+				local pos = calculate_tile_position(x, y)
+			local id = factory.create(game_state.tile_factory, pos, nil, nil, 1.0)
+
+				game_state.tile_objects[x][y] = id
+				update_tile_visual(id, cell)
+			end
+		end
+	end
+end
+
+
+function init(self)
+	-- Инициализируем генератор случайных чисел
+	math.randomseed(math.floor(socket.gettime() * 1000000))
+
+	-- 1. Загружаем словарь
+	game_state.dictionary = dictionary_service.init({csv_path = "/custom_resources/words/WordList_EN.csv"})
+
+	-- 2. Создаем игровое поле
+	game_state.board = board_service.init({
+		dictionary = game_state.dictionary,
+		pattern = {7, 6, 7, 6, 7, 6, 7},
+		difficulty = 0.35,
+		target_letters = {"A", "S", "D", "F", "G", "H"},
+		use_random_joker = true,
+		use_pity_joker = true
+	})
+
+	-- 3. Захватываем ввод
+	msg.post(".", "acquire_input_focus")
+
+	-- 4. Спавним визуальные тайлы
+	game_state.tile_factory = msg.url("#tile_factory")
+	--self.selected_marker = msg.url("main:/factories#selected_marker")
+
+	spawn_grid()
+
+	-- 5. Обновляем UI
+	update_ui()
+
+	print(board_service.debug_dump(game_state.board))
+end
+
+
+-- ──────────────────────────────────────────────────
+-- Расчет позиции тайла (с учетом гекс-сдвига)
+-- ──────────────────────────────────────────────────
+
+function calculate_tile_position(x, y)
+	local offset_x = GRID_OFFSET_X + (x - 1) * CELL_WIDTH
+	local offset_y = GRID_OFFSET_Y - (y - 1) * CELL_HEIGHT
+
+	-- Четные колонки сдвинуты вниз (гекс-сетка)
+	if x % 2 == 0 then
+		offset_y = offset_y - CELL_HEIGHT * 0.5
+	end
+
+	return vmath.vector3(offset_x, offset_y, 0)
+end
+
+-- ──────────────────────────────────────────────────
+-- Обновление визуала тайла
+-- ──────────────────────────────────────────────────
+
+function update_tile_visual(tile_id, cell)
+	local label_url = msg.url(nil, tile_id, "character")
+	local sprite_url = msg.url(nil, tile_id, "back")
+
+	if cell.is_target then
+		label.set_text(label_url, cell.char .. "*")
+		go.set(sprite_url, "tint", vmath.vector4(1, 0, 0, 1))
+		go.set(label_url, "color", vmath.vector4(1, 0, 0, 1))
+	elseif cell.is_booster then
+		label.set_text(label_url, cell.char)
+		go.set(sprite_url, "tint", vmath.vector4(1, 1, 1, 1))
+		go.set(label_url, "color", vmath.vector4(1, 1, 1, 1))
+	elseif cell.char == "⭐" then
+		local marker = cell.joker_type == "random" and "R" or "P"
+		label.set_text(label_url, "⭐" .. marker)
+		go.set(sprite_url, "tint", vmath.vector4(1, 0.8, 0, 1))
+		go.set(label_url, "color", vmath.vector4(1, 0.8, 0, 1))
+	else
+		label.set_text(label_url, cell.char)
+		go.set(sprite_url, "tint", vmath.vector4(1, 1, 1, 1))
+		go.set(label_url, "color", vmath.vector4(1, 1, 1, 1))
+	end
+end
+
+-- ──────────────────────────────────────────────────
+-- Обновление UI
+-- ──────────────────────────────────────────────────
+
+function update_ui()
+	local board = game_state.board
+
+	print(string.format("UI update: targets=%d/%d, idle_moves=%d, pending=%d, word=%s",
+		board.targets_collected,
+		board.target_goal,
+		board.idle_moves,
+		#board.pending_targets,
+		get_current_word_text()))
+end
+
+-- ──────────────────────────────────────────────────
+-- Получение текущего текста слова из выбранного пути
+-- ──────────────────────────────────────────────────
+
+function get_current_word_text()
+	local text = ""
+	for i = 1, #game_state.selected_path do
+		local p = game_state.selected_path[i]
+		local cell = game_state.board.grid[p.x][p.y]
+		if cell then
+			text = text .. cell.char
+		end
+	end
+	return text
+end
+
+-- ──────────────────────────────────────────────────
+-- Обработка ввода (тачи/клики)
+-- ──────────────────────────────────────────────────
+
+function on_input(self, action_id, action)
+
+	if game_state.is_animating then
+		return true
+	end
+
+	if action_id == hash("touch") then
+		if action.pressed then
+			game_state.mouse_down = true
+			local hit = pick_tile(action.screen_x, action.screen_y)
+			if hit then
+				try_select_tile(hit.x, hit.y)
+			end
+			return true
+
+		elseif action.released then
+			game_state.mouse_down = false
+			if #game_state.selected_path >= 2 then
+				confirm_move()
+			else
+				clear_selection()
+			end
+			return true
+
+		elseif game_state.mouse_down then
+			local hit = pick_tile(action.screen_x, action.screen_y)
+			if hit then
+				try_select_tile(hit.x, hit.y)
+			end
+			return true
+		end
+
+	end
+
+	if action_id == hash("cancel") and action.pressed then
+		clear_selection()
+		return true
+	end
+
+	return false
+end
+
+-- ──────────────────────────────────────────────────
+-- Пикинг тайла по координатам экрана
+-- ──────────────────────────────────────────────────
+
+function pick_tile(screen_x, screen_y)
+	local world = camera.screen_xy_to_world(screen_x, screen_y, "camera#camera")
+	local wx = world.x
+	local wy = world.y
+
+	local board = game_state.board.board
+
+	for x = 1, board.num_cols do
+		for y = 1, board.pattern[x] do
+			local pos = calculate_tile_position(x, y)
+			local half_w = CELL_WIDTH / 2
+			local half_h = CELL_HEIGHT / 2
+
+			if wx >= pos.x - half_w and wx <= pos.x + half_w
+			and wy >= pos.y - half_h and wy <= pos.y + half_h then
+				return {x = x, y = y}
+			end
+		end
+	end
+
+	return nil
+end
+
+-- ──────────────────────────────────────────────────
+-- Попытка выбрать тайл
+-- ──────────────────────────────────────────────────
+
+function try_select_tile(x, y)
+	local path = game_state.selected_path
+
+	-- Если путь пустой - просто начинаем новый путь
+	if #path == 0 then
+		local cell = game_state.board.grid[x][y]
+		if cell and not cell.is_booster then
+			add_to_selection(x, y)
+		end
+		return
+	end
+
+	-- Проверяем, не кликнули ли на уже выбранную клетку (откат)
+	for i = #path, 1, -1 do
+		if path[i].x == x and path[i].y == y then
+			-- Откатываем до этого шага
+			while #path > i do
+				remove_last_selection()
+			end
+			return
+		end
+	end
+
+	-- Проверяем, что новая клетка - сосед последней
+	local last = path[#path]
+	if board_geometry.are_neighbors(game_state.board.board, last.x, last.y, x, y) then
+		local cell = game_state.board.grid[x][y]
+		-- Нельзя выбирать бустеры и пустые клетки
+		if cell and not cell.is_booster then
+			-- Нельзя повторно использовать клетку в пути
+			local already_used = false
+			for i = 1, #path do
+				if path[i].x == x and path[i].y == y then
+					already_used = true
+					break
+				end
+			end
+
+			if not already_used then
+				add_to_selection(x, y)
+			end
+		end
+	end
+end
+
+-- ──────────────────────────────────────────────────
+-- Добавление/удаление из выделения
+-- ──────────────────────────────────────────────────
+
+function add_to_selection(x, y)
+	table.insert(game_state.selected_path, {x = x, y = y})
+
+	-- Визуальная подсветка
+	local tile_id = game_state.tile_objects[x][y]
+	if tile_id then
+		local sprite_url = msg.url(nil, tile_id, "back")
+		go.set(sprite_url, "tint", vmath.vector4(0, 1, 0, 1))  -- Зеленый
+	end
+
+	update_ui()
+end
+
+function remove_last_selection()
+	local p = table.remove(game_state.selected_path)
+	if p then
+		local tile_id = game_state.tile_objects[p.x][p.y]
+		if tile_id then
+			local cell = game_state.board.grid[p.x][p.y]
+			update_tile_visual(tile_id, cell)  -- Восстанавливаем оригинальный цвет
+		end
+	end
+	update_ui()
+end
+
+function clear_selection()
+	-- Восстанавливаем все цвета
+	for i = 1, #game_state.selected_path do
+		local p = game_state.selected_path[i]
+		local tile_id = game_state.tile_objects[p.x][p.y]
+		if tile_id then
+			local cell = game_state.board.grid[p.x][p.y]
+			update_tile_visual(tile_id, cell)
+		end
+	end
+
+	game_state.selected_path = {}
+	update_ui()
+end
+
+-- ──────────────────────────────────────────────────
+-- Подтверждение хода
+-- ──────────────────────────────────────────────────
+
+function confirm_move()
+	game_state.is_animating = true
+
+	local result = move_resolver.resolve(
+		game_state.board,
+		game_state.selected_path,
+		game_state.dictionary
+	)
+
+	if result.ok then
+		-- Ход принят
+		print("Слово:", result.chosen_word)
+		print("Собрано целей:", result.targets_collected_now)
+		print("Всего целей:", result.total_targets_collected)
+		print("Осталось:", result.targets_remaining)
+
+		-- Анимация уничтожения пути
+		animate_destruction(game_state.selected_path, function()
+			animate_gravity_refill()
+
+			if result.is_win then
+				print("=== ПОБЕДА! ===")
+			elseif result.targets_remaining <= 0 then
+				print("=== ПОБЕДА! (все цели собраны) ===")
+			end
+		end)
+
+	else
+		-- Ход отклонен
+		print("Ход отклонен:", result.error)
+		animate_reject(game_state.selected_path)
+		clear_selection()
+		game_state.is_animating = false
+	end
+end
+
+-- ──────────────────────────────────────────────────
+-- Анимации
+-- ──────────────────────────────────────────────────
+
+function animate_destruction(path, callback)
+	local destroyed = 0
+	local total = #path
+
+	for i = 1, total do
+		local p = path[i]
+		local tile_id = game_state.tile_objects[p.x][p.y]
+
+		if tile_id then
+			go.animate(tile_id, "scale", go.PLAYBACK_ONCE_FORWARD,
+				vmath.vector3(0.1, 0.1, 1), go.EASING_OUTBACK, 0.2, 0, function()
+				go.delete(tile_id)
+				game_state.tile_objects[p.x][p.y] = nil
+				destroyed = destroyed + 1
+				if destroyed >= total and callback then
+					callback()
+				end
+			end)
+		else
+			destroyed = destroyed + 1
+		end
+	end
+
+	if total == 0 and callback then
+		callback()
+	end
+end
+
+function animate_reject(path)
+	for i = 1, #path do
+		local p = path[i]
+		local tile_id = game_state.tile_objects[p.x][p.y]
+
+		if tile_id then
+			local sprite_url = msg.url(nil, tile_id, "back")
+			go.animate(sprite_url, "tint", go.PLAYBACK_ONCE_PINGPONG,
+				vmath.vector4(1, 0, 0, 1), go.EASING_LINEAR, 0.2)
+		end
+	end
+end
+
+-- ──────────────────────────────────────────────────
+-- Обновление сетки после хода
+-- ──────────────────────────────────────────────────
+
+function animate_gravity_refill()
+	local board = game_state.board.board
+	local grid = game_state.board.grid
+
+	local anim_count = 0
+	local anim_done = 0
+
+	local function on_anim_done()
+		anim_done = anim_done + 1
+		if anim_done >= anim_count then
+			game_state.selected_path = {}
+			game_state.is_animating = false
+			update_ui()
+		end
+	end
+
+	for x = 1, board.num_cols do
+		local survivors = {}
+		for y = board.pattern[x], 1, -1 do
+			if game_state.tile_objects[x][y] then
+				table.insert(survivors, {
+					obj = game_state.tile_objects[x][y],
+					old_y = y
+				})
+			end
+		end
+
+		for y = 1, board.pattern[x] do
+			game_state.tile_objects[x][y] = nil
+		end
+
+		local target_y = board.pattern[x]
+		for i = 1, #survivors do
+			local s = survivors[i]
+			game_state.tile_objects[x][target_y] = s.obj
+
+			if s.old_y ~= target_y then
+				local pos = calculate_tile_position(x, target_y)
+				anim_count = anim_count + 1
+				go.animate(s.obj, "position", go.PLAYBACK_ONCE_FORWARD,
+					pos, go.EASING_OUTBOUNCE, 0.3, 0, on_anim_done)
+			end
+
+			target_y = target_y - 1
+		end
+
+		for y = target_y, 1, -1 do
+			local cell = grid[x][y]
+			if cell then
+				local target_pos = calculate_tile_position(x, y)
+				local spawn_pos = vmath.vector3(target_pos.x, target_pos.y + CELL_HEIGHT * 3, 0)
+				local id = factory.create(game_state.tile_factory, spawn_pos, nil, nil, 1.0)
+				update_tile_visual(id, cell)
+				game_state.tile_objects[x][y] = id
+
+				anim_count = anim_count + 1
+				go.set(id, "scale", vmath.vector3(0.5, 0.5, 1))
+				go.animate(id, "position", go.PLAYBACK_ONCE_FORWARD,
+					target_pos, go.EASING_OUTEXPO, 0.4, 0, on_anim_done)
+				go.animate(id, "scale", go.PLAYBACK_ONCE_FORWARD,
+					vmath.vector3(TILE_SCALE, TILE_SCALE, 1), go.EASING_OUTBACK, 0.3)
+			end
+		end
+	end
+
+	if anim_count == 0 then
+		game_state.selected_path = {}
+		game_state.is_animating = false
+		update_ui()
+	end
+end
+
+-- ──────────────────────────────────────────────────
+-- Финализация
+-- ──────────────────────────────────────────────────
+
+function final(self)
+	-- Очистка
+	for x = 1, #game_state.tile_objects do
+		if game_state.tile_objects[x] then
+			for y = 1, #game_state.tile_objects[x] do
+				local obj = game_state.tile_objects[x][y]
+				if obj then
+					go.delete(obj)
+				end
+			end
+		end
+	end
+end
