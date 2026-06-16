@@ -46,7 +46,7 @@ DEFAULT_BG_WEIGHTS = {
 	}
 }
 
-local RU_BG_WEIGHTS = {
+RU_BG_WEIGHTS = {
 	vowels = {
 		letters = {"О","Е","А","И","У","Я","Ы","Ю","Э","Ё"},
 		weights = {40, 30, 25, 20, 8, 5, 5, 3, 2, 1}
