@@ -297,6 +297,29 @@ All commands run from the project root (the folder with `game.project`).
 - Build via the running editor succeeds (`defold-project-build` skill).
 - `.deps/` is up to date with `game.project` dependencies (run fetch_deps.py after dependency changes).
 
+## Session memory — last changes
+
+### Task: Difficulty slider + Restart button on HUD
+
+Moved difficulty slider and restart button from `win_popup` to `main/hud.gui` so they're always visible.
+
+**Files changed:**
+- `main/hud.gui` — added 5 nodes: `difficulty_label`, `slider_track`, `slider_thumb`, `restart_btn`, `restart_text`
+- `main/hud.gui_script` — full slider logic: `on_input` drag with `drag_offset_x`, sends `set_difficulty` messages on drag, sends `restart` message with `{ difficulty = self.slider_value_num }` on button click
+- `main/main.script` — `on_input` returns `false` (not `true`) so HUD also receives touch; added `set_difficulty` message handler that updates `game_state.difficulty`; `restart` message now forwards difficulty param
+- `popups/win_popup/win_popup.gui` — removed slider nodes
+- `popups/win_popup/win_popup.gui_script` — simplified (no slider, restart via monarch message with no params)
+
+**Key fixes:**
+1. `main.script.on_input` must return `false` — returning `true` consumes the input in Defold, preventing HUD from receiving touch events
+2. Slider drag needs `drag_offset_x` (cursor offset from thumb center at press) to avoid sudden jump when grabbing thumb off-center
+
+**Joker verification confirmed:**
+- `joker_service.analyze_random_joker()` → `JOKER_RANDOM` (type `"random"`, symbol `"@"` with "⭐R" suffix)
+- `joker_service.try_mercy_joker()` → `JOKER_MERCY` (type `"mercy"`, symbol `"@"` with "⭐P" suffix)
+- Both are called from `move_resolver.resolve()`, gated by `config.lua` params: `use_random_joker`, `use_mercy_joker`, `max_random_jokers`, `max_mercy_jokers`, `max_total_jokers`
+- `board_service.init()` stores `difficulty` in `state.board.difficulty` and `state.board.cfg.difficulty`
+
 ## Important repo-specific caveats
 
 - **Git commit messages**: use the following format: `Short description` in English language ONLY.
