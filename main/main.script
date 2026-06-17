@@ -492,34 +492,43 @@ function animate_gravity_refill()
 		local target_y = board.pattern[x]
 		for i = 1, #survivors do
 			local s = survivors[i]
-			game_state.tile_objects[x][target_y] = s.obj
-			update_tile_visual(s.obj, grid[x][target_y])
+			local cell = grid[x][target_y]
+			if cell then
+				game_state.tile_objects[x][target_y] = s.obj
+				update_tile_visual(s.obj, cell)
 
-			if s.old_y ~= target_y then
-				local pos = calculate_tile_position(x, target_y)
-				anim_count = anim_count + 1
-				go.animate(s.obj, "position", go.PLAYBACK_ONCE_FORWARD,
-					pos, go.EASING_OUTBOUNCE, 0.3, 0, on_anim_done)
+				if s.old_y ~= target_y then
+					local pos = calculate_tile_position(x, target_y)
+					anim_count = anim_count + 1
+					go.animate(s.obj, "position", go.PLAYBACK_ONCE_FORWARD,
+						pos, go.EASING_OUTBOUNCE, 0.3, 0, on_anim_done)
+				end
+
+				target_y = target_y - 1
+			else
+				go.delete(s.obj)
 			end
-
-			target_y = target_y - 1
 		end
 
 		for y = target_y, 1, -1 do
 			local cell = grid[x][y]
 			if cell then
-				local target_pos = calculate_tile_position(x, y)
-				local spawn_pos = vmath.vector3(target_pos.x, target_pos.y + CELL_HEIGHT * 3, 0)
-				local id = factory.create(game_state.tile_factory, spawn_pos, nil, nil, 1.0)
-				update_tile_visual(id, cell)
-				game_state.tile_objects[x][y] = id
+				if not cell.char then
+					print("DEBUG: nil char at x=" .. x .. " y=" .. y .. " cell=" .. tostring(cell) .. " is_target=" .. tostring(cell.is_target) .. " is_booster=" .. tostring(cell.is_booster))
+				else
+					local target_pos = calculate_tile_position(x, y)
+					local spawn_pos = vmath.vector3(target_pos.x, target_pos.y + CELL_HEIGHT * 3, 0)
+					local id = factory.create(game_state.tile_factory, spawn_pos, nil, nil, 1.0)
+					update_tile_visual(id, cell)
+					game_state.tile_objects[x][y] = id
 
-				anim_count = anim_count + 1
-				go.set(id, "scale", vmath.vector3(0.5, 0.5, 1))
-				go.animate(id, "position", go.PLAYBACK_ONCE_FORWARD,
-					target_pos, go.EASING_OUTEXPO, 0.4, 0, on_anim_done)
-				go.animate(id, "scale", go.PLAYBACK_ONCE_FORWARD,
-					vmath.vector3(TILE_SCALE, TILE_SCALE, 1), go.EASING_OUTBACK, 0.3)
+					anim_count = anim_count + 1
+					go.set(id, "scale", vmath.vector3(0.5, 0.5, 1))
+					go.animate(id, "position", go.PLAYBACK_ONCE_FORWARD,
+						target_pos, go.EASING_OUTEXPO, 0.4, 0, on_anim_done)
+					go.animate(id, "scale", go.PLAYBACK_ONCE_FORWARD,
+						vmath.vector3(TILE_SCALE, TILE_SCALE, 1), go.EASING_OUTBACK, 0.3)
+				end
 			end
 		end
 	end

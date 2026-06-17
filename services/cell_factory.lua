@@ -1,126 +1,123 @@
 --[[
 cell_factory.lua
 
-Responsible for generating individual cells and characters.
-Depends on board config (difficulty, power_factor, weights).
-No board state, just cell creation.
+Фабрика клеток. Под ТЗ упрощена:
+- Случайные джокеры на спавне НЕ создаются (см. BR-J01 — random joker
+  теперь создаётся отдельным алгоритмом раз в 3 хода).
+- Генерация букв делегирована letter_bag + spawn_service (BR-F04, BR-G01).
+- Cell_factory остаётся ответственным только за создание объекта-клетки.
 
-Usage:
-local cell = cell_factory.create_cell(board_config, {
-	char = "A",
-	is_target = true,
-	allow_joker = false
-})
+API (обратная совместимость с расширением):
+  cell = cell_factory.create_cell(board_config, options)
+    options:
+      char        -- если задан, используется как есть
+      is_target
+      is_booster
+      joker_type  -- если char == JOKER
+
+  cell_factory.is_joker(cell)
+  cell_factory.joker_type(cell)
+  cell_factory.get_constants()
+
+  -- новые:
+  cell_factory.create_letter_cell(letter, opts) -- сахар
+  cell_factory.create_joker_cell(joker_type)
+  cell_factory.create_booster_cell(booster_char)
 ]]--
-
-local utils = require("shared.utils")
 
 local cell_factory = {}
 
--- ──────────────────────────────────────────────────
--- Constants
--- ──────────────────────────────────────────────────
-
 local CHAR_JOKER = "@"
 local JOKER_RANDOM = "random"
-local JOKER_PITY = "pity"
+local JOKER_MERCY = "mercy"
+-- Алиас для обратной совместимости со старым кодом (pity ≡ mercy в терминах ТЗ).
+local JOKER_PITY = JOKER_MERCY
 
--- ──────────────────────────────────────────────────
--- Character generation
--- ──────────────────────────────────────────────────
+local BOOSTER_BOMB = "§"
+local BOOSTER_LINE = "±"
+local BOOSTER_COLOR = "#"
 
-function cell_factory.generate_regular_char(board_config)
-	local power_factor = 1.0 - (board_config.difficulty * 0.85)
+local CONSTANTS = {
+	CHAR_JOKER = CHAR_JOKER,
+	JOKER_RANDOM = JOKER_RANDOM,
+	JOKER_MERCY = JOKER_MERCY,
+	JOKER_PITY = JOKER_PITY,
+	BOOSTER_BOMB = BOOSTER_BOMB,
+	BOOSTER_LINE = BOOSTER_LINE,
+	BOOSTER_COLOR = BOOSTER_COLOR
+}
 
-	local category
-	if math.random() < 0.35 then
-		category = board_config.bg_weights.vowels
-	else
-		category = board_config.bg_weights.consonants
-	end
-
-	local letters = category.letters
-	local raw_weights = category.weights
-	local final_weights = {}
-
-	for i = 1, #raw_weights do
-		final_weights[i] = raw_weights[i] ^ power_factor
-	end
-
-	local char = utils.weighted_choice(letters, final_weights)
-
-	if char == "Q" then
-		return "QU"
-	end
-
-	return char
+function cell_factory.get_constants()
+	return CONSTANTS
 end
 
-function cell_factory.generate_char(board_config, can_spawn_random)
-	if board_config.use_random_joker
-	and can_spawn_random
-	and math.random() < board_config.current_joker_chance then
-		return CHAR_JOKER, JOKER_RANDOM
-	end
-
-	return cell_factory.generate_regular_char(board_config), nil
-end
-
--- ──────────────────────────────────────────────────
--- Cell creation
--- ──────────────────────────────────────────────────
-
-function cell_factory.create_cell(board_config, options)
-	options = options or {}
-
-	local char = options.char
-	local joker_type = options.joker_type
-	local is_target = options.is_target == true
-	local is_booster = options.is_booster == true
-	local allow_joker = options.allow_joker ~= false
-
-	if char == nil then
-		char, joker_type = cell_factory.generate_char(board_config, allow_joker)
-	elseif char ~= CHAR_JOKER then
-		joker_type = nil
-	end
-
+local function new_cell(char, opts)
+	opts = opts or {}
+	local is_target = opts.is_target == true
+	local is_booster = opts.is_booster == true
+	local joker_type = (char == CHAR_JOKER) and opts.joker_type or nil
 	return {
 		char = char,
 		is_target = is_target,
 		is_booster = is_booster,
-		joker_type = (char == CHAR_JOKER) and joker_type or nil
+		joker_type = joker_type,
+		origin = opts.origin -- метка для repair/random_joker (BR-J01 §137: новые клетки)
 	}
 end
 
--- ──────────────────────────────────────────────────
--- Joker detection helpers
--- ──────────────────────────────────────────────────
+-- Основной конструктор. char ОБЯЗАТЕЛЕН (старый код передавал nil и просил
+-- сгенерировать — теперь это запрещено: используйте spawn_service).
+function cell_factory.create_cell(board_config, options)
+	options = options or {}
+	local char = options.char
+	if char == nil then
+		error("cell_factory.create_cell: char is required (use spawn_service to generate)")
+	end
+	return new_cell(char, options)
+end
+
+function cell_factory.create_letter_cell(letter, opts)
+	if letter == nil then
+		print("DEBUG: create_letter_cell called with nil letter")
+		print(debug.traceback())
+	end
+	return new_cell(letter, opts)
+end
+
+function cell_factory.create_target_cell(letter, opts)
+	opts = opts or {}
+	opts.is_target = true
+	return new_cell(letter, opts)
+end
+
+function cell_factory.create_joker_cell(joker_type, opts)
+	opts = opts or {}
+	opts.joker_type = joker_type
+	return new_cell(CHAR_JOKER, opts)
+end
+
+function cell_factory.create_booster_cell(booster_char, opts)
+	opts = opts or {}
+	opts.is_booster = true
+	return new_cell(booster_char, opts)
+end
 
 function cell_factory.is_joker(cell)
 	return cell ~= nil and cell.char == CHAR_JOKER
 end
 
 function cell_factory.joker_type(cell)
-	if not cell_factory.is_joker(cell) then
-		return nil
-	end
+	if not cell_factory.is_joker(cell) then return nil end
 	return cell.joker_type
 end
 
--- ──────────────────────────────────────────────────
--- Expose constants for other modules
--- ──────────────────────────────────────────────────
-
-function cell_factory.get_constants()
-	return {
-		CHAR_JOKER = CHAR_JOKER,
-		BOOSTER_BOMB = "§",
-		BOOSTER_LINE = "±",
-		BOOSTER_COLOR = "#",
-		JOKER_RANDOM = JOKER_RANDOM,
-		JOKER_PITY = JOKER_PITY
-	}
+function cell_factory.is_ordinary(cell)
+	-- Обычная буква: не пустая, не бустер, не джокер, не цель.
+	if cell == nil then return false end
+	if cell.is_booster then return false end
+	if cell.char == CHAR_JOKER then return false end
+	if cell.is_target then return false end
+	return true
 end
 
 return cell_factory
