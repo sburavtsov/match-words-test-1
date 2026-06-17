@@ -5,6 +5,7 @@ function init(self)
 	nodes.moves_text = gui.get_node("moves_text")
 	nodes.pending_text = gui.get_node("pending_text")
 	nodes.word_text = gui.get_node("word_text")
+	nodes.difficulty_text = gui.get_node("difficulty_text")
 end
 
 function on_message(self, message_id, message, sender)
@@ -38,5 +39,6 @@ function on_message(self, message_id, message, sender)
 		gui.set_text(nodes.pending_text, "В очереди: " .. pending_str)
 
 		gui.set_text(nodes.word_text, message.current_word or "")
+		gui.set_text(nodes.difficulty_text, "Сложность: " .. string.format("%.2f", message.difficulty or 0.0))
 	end
 end

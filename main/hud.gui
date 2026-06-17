@@ -81,5 +81,23 @@ nodes {
   pivot: PIVOT_S
   inherit_alpha: true
 }
+nodes {
+  position {
+    x: 20.0
+    y: 1026.0
+  }
+  size {
+    x: 500.0
+    y: 30.0
+  }
+  type: TYPE_TEXT
+  text: "Сложность: 0.0"
+  font: "rum"
+  id: "difficulty_text"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_BOTTOM
+  pivot: PIVOT_NW
+  inherit_alpha: true
+}
 material: "/builtins/materials/gui.material"
 adjust_reference: ADJUST_REFERENCE_PARENT

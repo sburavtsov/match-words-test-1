@@ -81,5 +81,63 @@ nodes {
   parent: "restart_btn"
   inherit_alpha: true
 }
+nodes {
+  position {
+    x: 320.0
+    y: 400.0
+    z: 0.1
+  }
+  size {
+    x: 300.0
+    y: 8.0
+  }
+  color {
+    x: 0.6
+    y: 0.6
+    z: 0.6
+  }
+  type: TYPE_BOX
+  id: "slider_track"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 320.0
+    y: 400.0
+    z: 0.2
+  }
+  size {
+    x: 20.0
+    y: 30.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_BOX
+  id: "slider_thumb"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 320.0
+    y: 350.0
+    z: 0.15
+  }
+  scale {
+    x: 2.0
+    y: 2.0
+  }
+  size {
+    x: 100.0
+    y: 30.0
+  }
+  type: TYPE_TEXT
+  text: "0.50"
+  font: "rum"
+  id: "slider_value"
+  inherit_alpha: true
+}
 material: "/builtins/materials/gui.material"
 adjust_reference: ADJUST_REFERENCE_PARENT

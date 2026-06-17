@@ -89,10 +89,11 @@ function init(self)
 })
 
 	-- 2. Создаем игровое поле
+	game_state.difficulty = 0.0
 	game_state.board = board_service.init({
 		dictionary = game_state.dictionary,
 		pattern = {7, 6, 7, 6, 7, 6, 7},
-		difficulty = 0.0,
+		difficulty = game_state.difficulty,
 		--target_letters = {"A", "S", "D", "F", "G", "H"},
 		target_letters = {"Б", "Д", "К", "У", "З"},
 		
@@ -184,7 +185,8 @@ function update_ui()
 		pending_targets = state.pending_targets,
 		active_targets = active_targets,
 		idle_moves = state.idle_moves,
-		current_word = get_current_word_text()
+		current_word = get_current_word_text(),
+		difficulty = game_state.difficulty or 0.0
 	})
 end
 
@@ -548,11 +550,14 @@ end
 
 function on_message(self, message_id, message, sender)
 	if message_id == hash("restart") then
-		restart_game()
+		restart_game(message.difficulty)
 	end
 end
 
-function restart_game()
+function restart_game(difficulty)
+	difficulty = difficulty or game_state.difficulty or 0.0
+	game_state.difficulty = difficulty
+
 	for x = 1, #game_state.tile_objects do
 		if game_state.tile_objects[x] then
 			for y = 1, #game_state.tile_objects[x] do
@@ -570,7 +575,7 @@ function restart_game()
 	game_state.board = board_service.init({
 		dictionary = game_state.dictionary,
 		pattern = {7, 6, 7, 6, 7, 6, 7},
-		difficulty = 0.0,
+		difficulty = difficulty,
 		target_letters = {"Б", "Д", "К", "У", "З"},
 		use_random_joker = true,
 		use_pity_joker = true
