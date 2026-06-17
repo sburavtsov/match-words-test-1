@@ -92,13 +92,13 @@ function init(self)
 	game_state.difficulty = 0.0
 	game_state.board = board_service.init({
 		dictionary = game_state.dictionary,
-		pattern = {7, 6, 7, 6, 7, 6, 7},
+		pattern = {7, 6, 7, 6, 7, 6, 7, 6, 7},
 		difficulty = game_state.difficulty,
 		--target_letters = {"A", "S", "D", "F", "G", "H"},
 		target_letters = {"Б", "Д", "К", "У", "З"},
 		
 		use_random_joker = true,
-		use_pity_joker = true
+		use_mercy_joker = true
 	})
 
 	-- 3. Захватываем ввод
@@ -150,7 +150,7 @@ function update_tile_visual(tile_id, cell)
 		go.set(sprite_url, "tint", vmath.vector4(1, 1, 1, 1))
 		go.set(label_url, "color", vmath.vector4(1, 1, 1, 1))
 	elseif cell_factory.is_joker(cell) then
-		local marker = cell.joker_type == "random" and "R" or "P"
+		local marker = cell.joker_type == "random" and "R" or "M"
 		label.set_text(label_url, "⭐" .. marker)
 		go.set(sprite_url, "tint", vmath.vector4(1, 0.8, 0, 1))
 		go.set(label_url, "color", vmath.vector4(1, 0.8, 0, 1))
@@ -576,11 +576,11 @@ function restart_game(difficulty)
 
 	game_state.board = board_service.init({
 		dictionary = game_state.dictionary,
-		pattern = {7, 6, 7, 6, 7, 6, 7},
+		pattern = {7, 6, 7, 6, 7, 6, 7, 6, 7},
 		difficulty = difficulty,
 		target_letters = {"Б", "Д", "К", "У", "З"},
 		use_random_joker = true,
-		use_pity_joker = true
+		use_mercy_joker = true
 	})
 
 	spawn_grid()
