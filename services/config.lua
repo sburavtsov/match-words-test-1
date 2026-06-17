@@ -14,7 +14,7 @@ local config = {}
 
 local DEFAULTS = {
 	-- Сложность ─────────────────────────────────────
-	difficulty = 0.6,
+	difficulty = 1.0,
 
 	-- BR-V01: размеры пулов словаря.
 	pool_a_limit = 3000,
@@ -96,17 +96,13 @@ local DEFAULTS = {
 	-- Конфигурация поля по умолчанию (можно переопределить per-level).
 	board_pattern = {7, 6, 7, 6, 7, 6, 7, 6, 7},
 
+	-- BR-S02: бустеры (по умолчанию отключены).
+	enable_boosters = false,
+
 	-- Метаданные версионности.
 	balance_version = "1.0",
 	dictionary_version = nil,
 
-	-- Когнитивная модель симулятора (P2) — заглушки.
-	cognitive = {
-		diagonal_blindness = 0.25,
-		tunnel_vision_prob = 0.40,
-		tunnel_vision_radius = 3,
-		impulse_prob = 0.12
-	}
 }
 
 -- Глубокая копия дефолтов (чтобы apply не портил источник).

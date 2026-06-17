@@ -30,8 +30,6 @@ local cell_factory = {}
 local CHAR_JOKER = "@"
 local JOKER_RANDOM = "random"
 local JOKER_MERCY = "mercy"
--- Алиас для обратной совместимости со старым кодом (pity ≡ mercy в терминах ТЗ).
-local JOKER_PITY = JOKER_MERCY
 
 local BOOSTER_BOMB = "§"
 local BOOSTER_LINE = "±"
@@ -41,7 +39,6 @@ local CONSTANTS = {
 	CHAR_JOKER = CHAR_JOKER,
 	JOKER_RANDOM = JOKER_RANDOM,
 	JOKER_MERCY = JOKER_MERCY,
-	JOKER_PITY = JOKER_PITY,
 	BOOSTER_BOMB = BOOSTER_BOMB,
 	BOOSTER_LINE = BOOSTER_LINE,
 	BOOSTER_COLOR = BOOSTER_COLOR
@@ -77,10 +74,6 @@ function cell_factory.create_cell(board_config, options)
 end
 
 function cell_factory.create_letter_cell(letter, opts)
-	if letter == nil then
-		print("DEBUG: create_letter_cell called with nil letter")
-		print(debug.traceback())
-	end
 	return new_cell(letter, opts)
 end
 

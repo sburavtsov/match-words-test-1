@@ -236,7 +236,6 @@ function move_resolver.resolve(state, move_coords, dictionary)
 		targets_remaining = state.target_goal - state.targets_collected,
 		target_spawned = target_spawned and true or false,
 		mercy_injected = mercy_injected,
-		pity_injected = mercy_injected, -- обратная совместимость
 		random_joker_injected = random_injected,
 		repair = repair_result,
 		is_win = is_win,

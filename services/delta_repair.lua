@@ -181,7 +181,6 @@ local function find_repair_route(state, dictionary, target_word, zone_set, delta
 	local chars = dictionary.utf8_chars(target_word)
 	local wlen = #chars
 	if wlen == 0 then
-		print("DEBUG: find_repair_route: empty chars for target_word=", tostring(target_word), " type=", type(target_word))
 		return nil
 	end
 
@@ -293,9 +292,7 @@ local function apply_repair(state, repair)
 	for i = 1, #repair.replacements do
 		local r = repair.replacements[i]
 		if r.new_char == nil then
-			print("WARNING: skip repair replacement with nil new_char at", r.x, r.y,
-				"old_char:", tostring(r.old_char),
-				"trace:", debug.traceback())
+			-- skip
 		else
 			state.grid[r.x][r.y] = cell_factory.create_letter_cell(r.new_char, {origin = "repair"})
 		end
@@ -366,7 +363,7 @@ function delta_repair.run(state, dictionary, deltas)
 		for i = 1, math.min(#candidates, 80) do
 			local w = candidates[i]
 			if w == nil or w == "" then
-				print("DEBUG: try_create(" .. tostring(attempt_label) .. "): candidate", i, "is nil/empty, skipping")
+				-- skip
 			else
 				-- BR-D02 §94: не создавать слово, тривиализующее цель (вне FTUE).
 				-- Эвристика: слово не должно полностью совпадать с активной целью соло
@@ -394,7 +391,6 @@ function delta_repair.run(state, dictionary, deltas)
 	if not ok and c_only then
 		-- BR-D03 §97: обязаны создать. Повышаем бюджет замен.
 		max_repl = max_repl + 2
-		print("DEBUG: delta_repair: c_only, retrying with max_repl=", max_repl, " candidates=", #candidates)
 		ok = try_create("c_only_retry")
 	end
 
@@ -406,10 +402,7 @@ function delta_repair.run(state, dictionary, deltas)
 	local should_try_second = ftue_active or low_diff or no_progress
 
 	if ok and should_try_second then
-		local r2 = try_create("second")
-		if r2 then
-			print("DEBUG: delta_repair: second word created, total created=", #created)
-		end
+		try_create("second")
 	end
 
 	event_logger.log("repair", {

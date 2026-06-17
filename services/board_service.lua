@@ -11,8 +11,6 @@ board_service.lua
   board_service.count_targets_in_path(state, coords) -> n
   board_service.resolve_word_path(state, coords, tile_len) -> booster_char|nil
   board_service.can_spawn_random_joker(state) -> bool (для обратной совместимости)
-  board_service.can_inject_pity_joker(state) -> bool (alias mercy)
-  board_service.inject_pity_joker(state, dictionary) -> bool (alias mercy)
   board_service.debug_dump(state) -> string
 
 И добавляет:
@@ -189,9 +187,11 @@ end
 
 function board_service.resolve_word_path(state, move_coords, tile_len)
 	local booster = nil
-	if tile_len == 5 then booster = CONSTANTS.BOOSTER_LINE
-	elseif tile_len == 6 then booster = CONSTANTS.BOOSTER_BOMB
-	elseif tile_len >= 7 then booster = CONSTANTS.BOOSTER_COLOR end
+	if state.board.cfg.enable_boosters then
+		if tile_len == 5 then booster = CONSTANTS.BOOSTER_LINE
+		elseif tile_len == 6 then booster = CONSTANTS.BOOSTER_BOMB
+		elseif tile_len >= 7 then booster = CONSTANTS.BOOSTER_COLOR end
+	end
 
 	local removed = {}
 	for i = 1, #move_coords do
@@ -218,17 +218,6 @@ function board_service.can_spawn_random_joker(state)
 	local s = joker_service.stats(state)
 	local cfg = state.board.cfg
 	return s.total < (cfg.max_total_jokers or 2) and s.random < (cfg.max_random_jokers or 1)
-end
-
-board_service.can_inject_pity_joker = function(state)
-	local s = joker_service.stats(state)
-	local cfg = state.board.cfg
-	return s.total < (cfg.max_total_jokers or 2) and s.mercy < (cfg.max_mercy_jokers or 1)
-end
-
-board_service.inject_pity_joker = function(state, dictionary)
-	-- Делегирует на mercy joker; threshold проверится внутри.
-	return joker_service.try_mercy_joker(state, dictionary)
 end
 
 -- ── Анализ random joker (BR-J01), вызывается раз в N ходов ──

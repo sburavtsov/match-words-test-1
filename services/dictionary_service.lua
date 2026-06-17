@@ -187,8 +187,8 @@ function dictionary_service.init(options)
 		if force_ascii then word = string.upper(word) end
 		-- BR-V01 §2: исключить < 3 букв.
 		if utf8_len(word) < 3 then return end
-		-- BR-V01 §3: исключить flag != 1 если флаг присутствует.
-		if flag ~= nil and flag ~= 1 then return end
+		-- BR-V01 §3: исключить только явно невалидные флаги.
+		if flag ~= nil and flag ~= 1 and flag ~= 0 then return end
 		raw[#raw + 1] = {word = word, freq = tonumber(freq) or 0}
 	end
 
