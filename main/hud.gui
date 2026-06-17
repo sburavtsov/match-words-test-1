@@ -13,7 +13,7 @@ nodes {
     y: 1061.0
   }
   size {
-    x: 500.0
+    x: 100.0
     y: 30.0
   }
   type: TYPE_TEXT
@@ -31,7 +31,7 @@ nodes {
     y: 1096.0
   }
   size {
-    x: 500.0
+    x: 100.0
     y: 30.0
   }
   type: TYPE_TEXT
@@ -49,7 +49,7 @@ nodes {
     y: 1131.0
   }
   size {
-    x: 500.0
+    x: 100.0
     y: 30.0
   }
   type: TYPE_TEXT
@@ -63,8 +63,29 @@ nodes {
 }
 nodes {
   position {
-    x: 465.0
-    y: 1056.0
+    x: 633.0
+    y: 1120.0
+  }
+  scale {
+    x: 2.5
+    y: 2.5
+  }
+  size {
+    x: 60.0
+    y: 30.0
+  }
+  type: TYPE_TEXT
+  text: "\320\232\320\236\320\233\320\221\320\220\320\241\320\220\t"
+  font: "rum"
+  id: "word_text"
+  yanchor: YANCHOR_BOTTOM
+  pivot: PIVOT_NE
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 353.0
+    y: 1067.0
   }
   scale {
     x: 1.5
@@ -72,31 +93,86 @@ nodes {
   }
   size {
     x: 200.0
-    y: 50.0
+    y: 30.0
   }
   type: TYPE_TEXT
+  text: "\320\241\320\273\320\276\320\266\320\275\320\276\321\201\321\202\321\214"
   font: "rum"
-  id: "word_text"
+  id: "difficulty_label"
   yanchor: YANCHOR_BOTTOM
-  pivot: PIVOT_S
   inherit_alpha: true
 }
 nodes {
   position {
-    x: 20.0
-    y: 1026.0
+    x: 289.0
+    y: 1118.0
   }
   size {
-    x: 500.0
+    x: 300.0
+    y: 8.0
+  }
+  color {
+    x: 0.6
+    y: 0.6
+    z: 0.6
+  }
+  type: TYPE_BOX
+  id: "slider_track"
+  yanchor: YANCHOR_BOTTOM
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 289.0
+    y: 1118.0
+    z: 0.1
+  }
+  size {
+    x: 20.0
     y: 30.0
   }
-  type: TYPE_TEXT
-  text: "Сложность: 0.0"
-  font: "rum"
-  id: "difficulty_text"
-  xanchor: XANCHOR_LEFT
+  type: TYPE_BOX
+  id: "slider_thumb"
   yanchor: YANCHOR_BOTTOM
-  pivot: PIVOT_NW
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 219.0
+    y: 1068.0
+    z: 0.1
+  }
+  size {
+    x: 160.0
+    y: 50.0
+  }
+  color {
+    x: 0.2
+    y: 0.6
+    z: 0.2
+  }
+  type: TYPE_BOX
+  id: "restart_btn"
+  yanchor: YANCHOR_BOTTOM
+  inherit_alpha: true
+}
+nodes {
+  position {
+    z: 0.2
+  }
+  scale {
+    x: 2.0
+    y: 2.0
+  }
+  size {
+    x: 50.0
+    y: 20.0
+  }
+  type: TYPE_TEXT
+  text: "Restart"
+  font: "rum"
+  id: "restart_text"
+  parent: "restart_btn"
   inherit_alpha: true
 }
 material: "/builtins/materials/gui.material"

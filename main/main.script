@@ -223,7 +223,7 @@ function on_input(self, action_id, action)
 			if hit then
 				try_select_tile(hit.x, hit.y)
 			end
-			return true
+			return false
 
 		elseif action.released then
 			game_state.mouse_down = false
@@ -232,14 +232,14 @@ function on_input(self, action_id, action)
 			else
 				clear_selection()
 			end
-			return true
+			return false
 
 		elseif game_state.mouse_down then
 			local hit = pick_tile(action.screen_x, action.screen_y)
 			if hit then
 				try_select_tile(hit.x, hit.y)
 			end
-			return true
+			return false
 		end
 
 	end
@@ -551,6 +551,8 @@ end
 function on_message(self, message_id, message, sender)
 	if message_id == hash("restart") then
 		restart_game(message.difficulty)
+	elseif message_id == hash("set_difficulty") then
+		game_state.difficulty = message.difficulty
 	end
 end
 

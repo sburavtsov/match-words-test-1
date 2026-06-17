@@ -2,46 +2,12 @@ local nodes = {}
 
 function init(self)
 	nodes.restart_btn = gui.get_node("restart_btn")
-	nodes.slider_track = gui.get_node("slider_track")
-	nodes.slider_thumb = gui.get_node("slider_thumb")
-	nodes.slider_value = gui.get_node("slider_value")
-
-	local track_pos = gui.get_position(nodes.slider_track)
-	local track_size = gui.get_size(nodes.slider_track)
-	self.slider_min_x = track_pos.x - track_size.x / 2
-	self.slider_max_x = track_pos.x + track_size.x / 2
-	self.slider_y = track_pos.y
-
-	self.slider_value_num = 0.5
-	gui.set_position(nodes.slider_thumb, vmath.vector3(
-		self.slider_min_x + self.slider_value_num * (self.slider_max_x - self.slider_min_x),
-		self.slider_y, 0.2))
-	update_value_text(self)
-end
-
-function update_value_text(self)
-	gui.set_text(nodes.slider_value, string.format("%.1f", self.slider_value_num))
 end
 
 function on_input(self, action_id, action)
-	if action_id == hash("touch") then
-		if action.released then
-			if not self.dragging and gui.pick_node(nodes.restart_btn, action.x, action.y) then
-				msg.post("main:/main#script", "restart", { difficulty = self.slider_value_num })
-			end
-			self.dragging = false
-		elseif action.pressed then
-			if gui.pick_node(nodes.slider_thumb, action.x, action.y) or
-			   gui.pick_node(nodes.slider_track, action.x, action.y) then
-				self.dragging = true
-			end
-		end
-
-		if self.dragging then
-			local x = math.max(self.slider_min_x, math.min(self.slider_max_x, action.x))
-			self.slider_value_num = (x - self.slider_min_x) / (self.slider_max_x - self.slider_min_x)
-			gui.set_position(nodes.slider_thumb, vmath.vector3(x, self.slider_y, 0.2))
-			update_value_text(self)
+	if action_id == hash("touch") and action.released then
+		if gui.pick_node(nodes.restart_btn, action.x, action.y) then
+			msg.post("main:/main#script", "restart")
 		end
 	end
 end

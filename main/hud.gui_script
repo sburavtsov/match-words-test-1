@@ -1,11 +1,38 @@
 local nodes = {}
 
+local function update_value_text(self)
+	gui.set_text(nodes.difficulty_label, "Сложность: " .. string.format("%.2f", self.slider_value_num))
+end
+
+local function set_slider_position(self, value)
+	value = math.max(0, math.min(1, value))
+	self.slider_value_num = value
+	local x = self.slider_min_x + value * (self.slider_max_x - self.slider_min_x)
+	gui.set_position(nodes.slider_thumb, vmath.vector3(x, self.slider_y, 0.1))
+	update_value_text(self)
+end
+
 function init(self)
 	nodes.targets_text = gui.get_node("targets_text")
 	nodes.moves_text = gui.get_node("moves_text")
 	nodes.pending_text = gui.get_node("pending_text")
 	nodes.word_text = gui.get_node("word_text")
-	nodes.difficulty_text = gui.get_node("difficulty_text")
+	nodes.difficulty_label = gui.get_node("difficulty_label")
+	nodes.slider_track = gui.get_node("slider_track")
+	nodes.slider_thumb = gui.get_node("slider_thumb")
+	nodes.restart_btn = gui.get_node("restart_btn")
+
+	local track_pos = gui.get_position(nodes.slider_track)
+	local track_size = gui.get_size(nodes.slider_track)
+	self.slider_min_x = track_pos.x - track_size.x / 2
+	self.slider_max_x = track_pos.x + track_size.x / 2
+	self.slider_y = track_pos.y
+
+	self.slider_value_num = 0.0
+	gui.set_position(nodes.slider_thumb, vmath.vector3(self.slider_min_x, self.slider_y, 0.1))
+	update_value_text(self)
+
+	msg.post(".", "acquire_input_focus")
 end
 
 function on_message(self, message_id, message, sender)
@@ -39,6 +66,32 @@ function on_message(self, message_id, message, sender)
 		gui.set_text(nodes.pending_text, "В очереди: " .. pending_str)
 
 		gui.set_text(nodes.word_text, message.current_word or "")
-		gui.set_text(nodes.difficulty_text, "Сложность: " .. string.format("%.2f", message.difficulty or 0.0))
+
+		local difficulty = message.difficulty or 0.0
+		set_slider_position(self, difficulty)
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("touch") then
+		if action.released then
+			if not self.dragging and gui.pick_node(nodes.restart_btn, action.x, action.y) then
+				msg.post("main:/main#script", "restart", { difficulty = self.slider_value_num })
+			end
+			self.dragging = false
+		elseif action.pressed then
+			if gui.pick_node(nodes.slider_thumb, action.x, action.y) or
+			   gui.pick_node(nodes.slider_track, action.x, action.y) then
+				self.dragging = true
+			end
+		end
+
+		if self.dragging then
+			local x = math.max(self.slider_min_x, math.min(self.slider_max_x, action.x))
+			self.slider_value_num = (x - self.slider_min_x) / (self.slider_max_x - self.slider_min_x)
+			gui.set_position(nodes.slider_thumb, vmath.vector3(x, self.slider_y, 0.1))
+			update_value_text(self)
+			msg.post("main:/main#script", "set_difficulty", { difficulty = self.slider_value_num })
+		end
 	end
 end
