@@ -84,7 +84,7 @@ nodes {
 }
 nodes {
   position {
-    x: 353.0
+    x: 377.0
     y: 1067.0
   }
   scale {
@@ -92,7 +92,7 @@ nodes {
     y: 1.5
   }
   size {
-    x: 200.0
+    x: 80.0
     y: 30.0
   }
   type: TYPE_TEXT
