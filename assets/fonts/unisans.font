@@ -1,0 +1,6 @@
+font: "/assets/fonts/Uni Sans Heavy.otf"
+material: "/builtins/fonts/font-df.material"
+size: 24
+output_format: TYPE_DISTANCE_FIELD
+all_chars: true
+characters: " !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"

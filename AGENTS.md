@@ -5,69 +5,167 @@ This repository is a **Defold** game project. The project root is the folder con
 ## Project map
 
 - **Root config**: `game.project`
-- **Main game content**: `main/` (board controller, chip game object, chip behavior, main collection)
-- **Assets**: `assets/` (chip_back.png, bg.jpg, game.atlas)
+- **Main game content**: `main/` (main.script, tile factory, HUD)
+- **Services**: `services/` (board, move resolution, dictionary, geometry, cell factory, config, field init, joker, letter bag, spawn, target, delta repair, event logging)
+- **Shared utilities**: `shared/utils.lua`
+- **CSV loader**: `utils/csvloader.lua`
+- **Assets**: `assets/` (chip_back.png, bg.jpg, game.atlas, fonts/)
 - **Input bindings**: `input/game.input_binding`
 - **Custom shaders**: `shaders/color_sprite/` (recolor vertex/fragment shaders and material)
-- **Documentation/reference**: `doc/` (linker.jpg)
-- **Dependencies (read-only context)**: `.deps/` — 4 external libraries + Defold engine builtins
+- **Debugger**: `debugger/` (VSCode Lua debugger integration)
+- **Dependencies (read-only context)**: `.deps/` — 5 external libraries + Defold engine builtins
   - `monarch/` — screen/popup navigation manager (6.0.1)
   - `object_interpolation/` — transform interpolation native extension (1.3.1)
   - `sharp_sprite/` — RGSS/mipmap shader-based texture filtering (1.0.0)
   - `xmath/` — zero-allocation vector/quaternion/matrix math native extension (main branch)
-  - `builtins/` — Defold engine builtins (1.12.4)
+  - `richtext/` — rich text rendering extension (5.22.1)
+  - `builtins/` — Defold engine builtins
 - **Build output**: `build/` (compiled `.luac`, `.collectionc`, `.goc`, etc.)
 - **Agent skills**: `.agents/skills/` (project-specific instructions and automation scripts)
-- **Screens**: `screens/<screen_name>/` *(not yet created — intended future structure)*
-- **Popups**: `popups/<popup_name>/` *(not yet created — intended future structure)*
+- **Popups**: `popups/<popup_name>/` (Monarch-registered popup overlays)
 
 Key Defold settings from `game.project`:
 
 - **Title/Version**: MW1 0.0.1
 - **Bootstrap collection**: `/main/main.collection`
 - **Input binding**: `/input/game.input_bindingc`
-- **Display**: 1024x1024, high DPI enabled
+- **Display**: 640x1136, high DPI enabled
 - **Physics scale**: 0.02
 - **Script shared_state**: 1 (enabled)
-- **Max counts**: sprite=256, label=256, particle_fx=256, particle_count=4096
+- **Max counts** (increased from defaults): sprite=256, label=256, particle_fx=256, particle_count=4096
+- **Dependencies**: monarch 6.0.1, object_interpolation 1.3.1, sharp_sprite 1.0.0, xmath (main), richtext 5.22.1
 
 **Resource paths in `game.project`**: Values like `main_collection`, `game_binding`, `app_icon` use Defold resource identifiers. A trailing `c` suffix denotes compiled resources and is expected — do not treat it as a typo.
 
-## Main game structure
+**Board pattern varies by level** (7 cols in main.script, 9 in config default). The grid is not square — each column has its own height.
 
-- **Board** (`main/board.script`): 7x7 letter-matching grid controller. Manages chip spawning via factory, linking (drag-to-connect), gravity collapse, and fill-from-above.
-- **Chip** (`main/chip.go` → `main/chip.script`): Individual letter tile with a label component (`"character"`) and sprite component (`"back"`) using the custom recolor material. Spawned via factory from board.script.
-- **Camera**: Orthographic camera at position (512, 512) in the main collection.
+## Main game structure
 
 ### Main collection (`main/main.collection`)
 
-Two game objects:
-- **`board`**: script component (`/main/board.script`) + embedded factory (`chip_factory`, prototype `/main/chip.go`)
-- **`camera`**: embedded camera component (orthographic, aspect_ratio=1.0, fov=0.7854, near_z=-1, far_z=1) at position (512, 512)
+Three game objects:
+- **`main`** (position 0,0): script component (`/main/main.script`) + embedded factory (`tile_factory`, prototype `/main/factories/tile_factory.go`). Main game controller — owns all game state.
+- **`camera`** (position 0,-50): embedded camera component (aspect_ratio=1.0, orthographic)
+- **`hud`**: referenced GUI component (`/main/hud.gui`) for HUD text display
+- **`win_popup`** (Monarch): screen_factory script + collectionfactory for win overlay popup
 
-### Chip game object (`main/chip.go`)
+### Main controller (`main/main.script`)
 
-- Script component: `/main/chip.script`
+Main game controller script:
+- **init**: seeds RNG, loads dictionary (RU, 57684 entries), inits board (7x6x7x6x7x6x7 pattern, 5 target letters БДКУЗ, random+mercy jokers), spawns tile grid from factory
+- **spawn_grid**: clears old tiles, creates new ones from board state via factory
+- **update_tile_visual**: per-cell visual update — targets (red+*), boosters (white), jokers (gold+⭐R/⭐P), normal letters (white)
+- **update_ui**: sends HUD update message to hud#gui
+- **on_input**: touch-based path selection (drag to select, release to confirm), cancel on right-click
+- **pick_tile**: screen-to-world coordinate lookup with AABB hit testing
+- **confirm_move**: calls move_resolver.resolve(), on success animates destruction → gravity/refill, on win triggers Monarch popup
+- **animate_destruction**: scale-down + delete with callback chain
+- **animate_reject**: red flash ping-pong for invalid moves
+- **animate_gravity_refill**: survivors slide down, new tiles drop from above with easing
+- **on_message**: handles `restart` from win_popup — full reinit
+
+### Tile behavior (`main/factories/tile.script`)
+
+Tile game object script (prototype):
+- Properties: `symb` (default 65), `blink` (default 0)
+- Constants: `NORMAL_SCALE=0.45`, `ZOOMED_SCALE=0.6`
+- Message handlers: `respawn` (reposition + enable), `sway` (Z-rotation ping-pong), `zoom_and_wobble` (scale+rotate), `reset`, `remove`
+
+### HUD GUI (`main/hud.gui` + `main/hud.gui_script`)
+
+Four text nodes at bottom-left and bottom-center: targets, moves, pending, current word.
+Handles `update_hud` messages with display data.
+
+### Tile game object (`main/factories/tile_factory.go`)
+
+- Script component: `/main/factories/tile.script`
 - Label `"character"`: 128x128, text "A", `/builtins/fonts/default.font`, label-df material, z=0.1, scale 8x
 - Sprite `"back"`: animation `chip_back`, `/shaders/color_sprite/recolor.material`, texture `/assets/game.atlas`
 
-### Board controller (`main/board.script`)
+## Services
 
-**Constants**: `blocksize=96`, `edge=80`, `bottom_edge=80`, `boardwidth=7`, `boardheight=7`. Chip types: `type_plain`, `type_striped_h`, `type_striped_v`.
+### Board service (`services/board_service.lua`)
+Central state-keeper. Full lifecycle: init → field generation → move resolution → gravity → fill → repair → normalize.
+- `init(options)` — creates board state, inits letter bag, runs field_initializer.build()
+- `apply_gravity(state)` — column-by-column gravity collapse
+- `fill_after_gravity(state)` — delegates to spawn_service
+- `resolve_word_path(state, coords, tile_len)` — destroys path cells, optionally creates booster (if `enable_boosters` in config)
+- `normalize_jokers(state)` — delegates to joker_service
+- `maybe_analyze_random_joker(state)` — periodic random joker placement
+- `spawn_target(state)` / `count_targets_in_path(state, coords)` — target management
+- `debug_dump(state)` — ASCII grid dump with markers
+- `collect_deltas(state)` — init empty delta record
 
-**Functions**: `build_board()` (random A-Z chips via factory), `collapse_board()` (gravity slide with OUTBOUNCE animation), `iterate_chips()`, `remove_chip()`/`remove_chips()`, `remove_link()` (ignores <3 length), `add_to_link()` (adjacency+color matching+backtracking), `empty_slots()`, `fill_slots()` (drop from y=1000 with OUTBOUNCE).
+### Move resolver (`services/move_resolver.lua`)
+Validates and resolves player moves:
+- `validate_path_shape(state, coords)` — boundary, adjacency, booster check
+- `enumerate_words(state, dictionary, coords)` — DFS with joker substitution
+- `pick_best_word(dictionary, words)` — Pool A > B > C, then length, then freq
+- **`resolve(state, coords, dictionary)`** — full pipeline: validate → enumerate → pick → remove path/boosters → collect targets → mercy joker → gravity → fill → delta zone → normalize → spawn target → delta repair → random joker → re-normalize → win check → return result with `is_win`
 
-**Message handlers**: `start_level` → build_board, `post-reaction` → collapse + fill.
+### Dictionary service (`services/dictionary_service.lua`)
+Loads and indexes word lists:
+- `init(options)` — loads CSV, deduplicates, sorts by freq, splits into pools A (3000)/B (8000)/C (rest), builds prefix set for DFS pruning, computes letter frequencies and spawn weights (BR-V02)
+- Filter: only `flag=0` and `flag=1` words accepted (both loaded)
+- `allowed_letters(dictionary, difficulty, cfg, targets)` — rare letter filtering
+- Exports `RU_ALPHABET`, `RU_VOWELS`, `DEFAULT_ALPHABET`
 
-**Input**: `on_input` handles `"touch"` action. `pressed` starts linking, `released` removes link and triggers `post-reaction`.
+### Board geometry (`services/board_geometry.lua`)
+Pure coordinate math:
+- Hex neighbor generation (odd/even column offset rules), adjacency checks
+- BFS radius, delta zone (union of radius neighborhoods)
+- Column weighting for target placement (center vs edge)
+- `foreach_cell(state, fn)` iterator
 
-### Chip behavior (`main/chip.script`)
+### Cell factory (`services/cell_factory.lua`)
+Cell object creation:
+- Constants: `CHAR_JOKER="@"`, types: random/mercy, boosters: § ± #
+- `create_letter_cell`, `create_target_cell`, `create_joker_cell`, `create_booster_cell`
+- `is_joker(cell)`, `joker_type(cell)`, `is_ordinary(cell)`
+- Exports `get_constants()` for CHAR_JOKER and other constants
 
-**Properties**: `symb` (default 65 = 'A'), `blink` (default 0).
+### Config (`services/config.lua`)
+Single source of balance parameters — all BR-referenced fields:
+- Difficulty, pool limits, repair params, target limits, joker limits, FTUE, vowel control, letter frequency weights, boosters disabled by default
+- `config.get()`, `config.apply(overrides)`, `config.reset()`
 
-**Constants**: `normal_scale=0.45`, `zoomed_scale=0.6`. Types: `type_plain`, `type_striped_h`, `type_striped_v`, `type_wrapped`, `type_bomb`.
+### Field initializer (`services/field_initializer.lua`)
+Anchor-first field generation (BR-F01/F02/F03):
+- Place target-anchor word → place non-intersecting entry words → fill from letter bag
+- Direction preferences: 65% vertical, 25% horizontal, 10% diagonal
+- Target placement weighted by difficulty (center for low, edge for high)
 
-**Message handlers**: `respawn` (set position, enable sprite), `sway` (gentle Z-rotation ping-pong), `zoom_and_wobble` (scale+rotate on interaction), `reset` (restore normal), `remove` (go.delete).
+### Joker service (`services/joker_service.lua`)
+- `stats(state)` — count jokers by type
+- `normalize(state)` — enforce limits (max_total=2, max_random=1, max_mercy=1)
+- `analyze_random_joker(state, dictionary)` — every N moves, score windows, place if freq below threshold
+- `try_mercy_joker(state, dictionary)` — on idle moves threshold, find Pool A/B word through target via joker
+
+### Letter bag (`services/letter_bag.lua`)
+Frequency-weighted letter pool (BR-F04):
+- `create(dictionary, cell_count, difficulty, cfg, targets)` — build weighted pool
+- `draw(bag, restrict_set?)` — random draw with vowel/consonant restriction
+- Auto-refill at 10% remaining
+
+### Spawn service (`services/spawn_service.lua`)
+Letter spawning with vowel control (BR-G01/G02):
+- Local vowel ratio per 3-column window, adjusts draw category
+- `fill_empty_cells(state)` — fills all nil cells
+
+### Target service (`services/target_service.lua`)
+- `count_active(state)`, `count_in_path(state, coords)`
+- `try_spawn(state)` — weighted column selection, upper half placement
+- `collect_in_path(state, coords)` — collect targets, manage idle_moves
+
+### Delta repair (`services/delta_repair.lua`)
+Always-on delta-zone repair (BR-D01/D02/D03):
+- `collect_delta_zone(state, deltas)` — union radius of changed cells
+- `run(state, dictionary, deltas)` — find Pool A words (len 3-4) in zone, minimum replacements, Pool-C-only protection
+
+### Event logger (`services/event_logger.lua`)
+Flat structured logging with circular buffer:
+- `log(event_type, payload)`, `drain()`, `peek()`, `reset()`
+- Canonical event types: session_start, level_start/end, move, repair, joker events, target, deadlock
 
 ## Input bindings (`input/game.input_binding`)
 
@@ -75,51 +173,48 @@ Single mouse trigger: `MOUSE_BUTTON_1` → action `"touch"`.
 
 ## Custom recolor shader
 
-Located in `shaders/color_sprite/`. Used by chip sprites (`"tile"` render tag) to enable per-vertex color tinting:
+Located in `shaders/color_sprite/`. Used by tile sprites (`"tile"` render tag) to enable per-vertex color tinting:
 
-- **Material constants**: `tint` (vec4 fragment uniform, default white), `newcolor` (vertex attribute, `SEMANTIC_TYPE_COLOR`, default RGBA 0.3882, 0.6078, 1.0, 1.0 = blue), `outline` (vertex attribute, default gray 0.5, 0.5, 0.5, alpha 0 = disabled).
-- **Vertex shader** (`recolor.vp`): passes `view_proj`, `position`, `texcoord0`, `newcolor`, `outline` → `new_color`, `new_outline` to fragment shader.
-- **Fragment shader** (`recolor.fp`): recolorizes grayscale/desaturated pixels using `new_color.rgb` (detected via `sprite.r + sprite.g == sprite.g * 2`), optionally renders outlines via green-channel mask (`sprite.g >= 1.0 && outline.w >= 1.0`), applies `tint` uniform.
+- **Material constants**: `tint` (vec4 fragment uniform, default white), `newcolor` (vertex attribute RGBA 0.3882, 0.6078, 1.0, 1.0 = blue), `outline` (gray 0.5, 0.5, 0.5, alpha 0 = disabled).
+- **Vertex shader** (`recolor.vp`): passes `view_proj`, `position`, `texcoord0`, `newcolor`, `outline` to fragment.
+- **Fragment shader** (`recolor.fp`): recolorizes grayscale pixels via green-channel detection, optionally renders outlines, applies tint uniform.
 
 ## External libraries
 
 ### Monarch screen manager
 
-Screen/popup navigation library (`require("monarch.monarch")`). Provides stack-based screen navigation with animated GUI transitions. Use the `monarch-screen-setup` skill when creating new screens or popups.
+Screen/popup navigation library (`require("monarch.monarch")`). Provides stack-based navigation with animated GUI transitions. Popups are registered in `main.collection` via `screen_factory` script + `collectionfactory`.
 
-Key modules:
-- `monarch.monarch` — main API (screen stacks, transitions, focus events)
-- `monarch.screen_factory` — screen registration via `#collectionfactory`
-- `monarch.screen_proxy` — screen registration via `#collectionproxy`
-- `monarch.transitions.gui` — GUI-based transition animations
-- `monarch.transitions.easings` — easing function wrappers
+Key API:
+- `monarch.show("popup_name")` — open popup
+- `monarch.back()` — close topmost popup
+- `monarch.screen_exists("name")`, `monarch.is_busy()`, `monarch.top()`
+
+See `monarch-screen-setup` skill for popup creation workflow.
 
 ### Object Interpolation
 
-Native extension for smooth transform interpolation. Add `object_interpolation` component to a game object and configure its `target_object` property.
-
-API: `object_interpolation.set_enabled(bool)`, `object_interpolation.is_enabled()`. Constants: `object_interpolation.APPLY_TRANSFORM_NONE`, `object_interpolation.APPLY_TRANSFORM_TARGET`.
+Native extension for smooth transform interpolation. Add `object_interpolation` component to a game object.
 
 ### Sharp Sprite
 
-Shader-based texture filtering to reduce aliasing on scaled sprites. Provides drop-in replacement materials in three variants:
-- **`/sharp_sprite/rgss/`** — Rotated Grid Super-Sampling (2x2 rotated offset sampling)
-- **`/sharp_sprite/mipmap_bias/`** — Hardware mipmapping with negative LOD bias
-- **`/sharp_sprite/rgss_bias/`** — RGSS + mipmap bias combined
-
-When the project uses Sharp Sprite, use RGSS materials from `/sharp_sprite/rgss/` instead of builtins for all supported component types: Sprite, GUI, ParticleFX, Spine, Tilemap, Font, Label.
+Shader-based texture filtering (RGSS). Provides drop-in replacement materials for sprite/GUI/particlefx/spine/tilemap components.
 
 ### xmath
 
-Zero-allocation vector/quaternion/matrix math native extension (`require("xmath")` not needed — available globally as `xmath`). All operations write results into a pre-allocated first argument to avoid Lua GC pressure. Use when writing performance-critical math code.
+Zero-allocation vector/quaternion/matrix math (`require("xmath")` not needed — global). All operations use pre-allocated first argument.
 
-API categories:
-- **Arithmetic**: `add`, `sub`, `mul`, `div`
-- **Vector**: `cross`, `mul_per_elem`, `normalize`, `rotate`, `vector`
-- **Quaternion**: `conj`, `quat_axis_angle`, `quat_basis`, `quat_from_to`, `quat_rotation_[x/y/z]`, `quat`, `quat_matrix4`
-- **Vector + Quat**: `lerp`, `slerp`
-- **Matrix**: `matrix`, `matrix_axis_angle`, `matrix_from_quat`, `matrix_frustum`, `matrix_inv`, `matrix_look_at`, `matrix4_orthographic`, `matrix_ortho_inv`, `matrix4_perspective`, `matrix_rotation_[x/y/z]`, `matrix_translation`, `matrix4_compose`, `matrix4_scale`
-- **Utility**: `clamp`
+### Rich Text (`richtext`)
+
+Rich text rendering extension for styled text in GUI.
+
+## Win condition and popup
+
+When `move_resolver.resolve()` returns `is_win=true`, `main/main.script` shows the Monarch popup `win_popup` after all game animations complete. The popup displays "Победа!" and a "Restart" button. On button click, it sends `restart` message to `main:/main#script`, which:
+1. Deletes all tile game objects
+2. Reinitializes board via `board_service.init()`
+3. Respawns grid
+4. Closes the popup via `monarch.back()`
 
 ## Include directories
 

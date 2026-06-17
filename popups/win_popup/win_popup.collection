@@ -1,0 +1,10 @@
+name: "win_popup"
+scale_along_z: 0
+embedded_instances {
+  id: "popup_go"
+  data: "components {\n"
+  "  id: \"gui\"\n"
+  "  component: \"/popups/win_popup/win_popup.gui\"\n"
+  "}\n"
+  ""
+}
