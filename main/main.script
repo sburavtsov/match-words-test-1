@@ -4,6 +4,7 @@ local move_resolver = require("services.move_resolver")
 local dictionary_service = require("services.dictionary_service")
 local board_geometry = require("services.board_geometry")
 local cell_factory = require("services.cell_factory")
+local monarch = require("monarch.monarch")
 
 -- ──────────────────────────────────────────────────
 -- Конфигурация рендера
@@ -390,14 +391,13 @@ function confirm_move()
 		print("Осталось:", result.targets_remaining)
 
 		-- Анимация уничтожения пути
+		local is_win = result.is_win
 		animate_destruction(game_state.selected_path, function()
-			animate_gravity_refill()
-
-			if result.is_win then
-				print("=== ПОБЕДА! ===")
-			elseif result.targets_remaining <= 0 then
-				print("=== ПОБЕДА! (все цели собраны) ===")
-			end
+			animate_gravity_refill(function()
+				if is_win then
+					monarch.show("win_popup")
+				end
+			end)
 		end)
 
 	else
@@ -458,7 +458,7 @@ end
 -- Обновление сетки после хода
 -- ──────────────────────────────────────────────────
 
-function animate_gravity_refill()
+function animate_gravity_refill(callback)
 	local board = game_state.board.board
 	local grid = game_state.board.grid
 
@@ -471,6 +471,9 @@ function animate_gravity_refill()
 			game_state.selected_path = {}
 			game_state.is_animating = false
 			update_ui()
+			if callback then
+				callback()
+			end
 		end
 	end
 
@@ -537,7 +540,47 @@ function animate_gravity_refill()
 		game_state.selected_path = {}
 		game_state.is_animating = false
 		update_ui()
+		if callback then
+			callback()
+		end
 	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("restart") then
+		restart_game()
+	end
+end
+
+function restart_game()
+	for x = 1, #game_state.tile_objects do
+		if game_state.tile_objects[x] then
+			for y = 1, #game_state.tile_objects[x] do
+				local obj = game_state.tile_objects[x][y]
+				if obj then
+					go.delete(obj)
+				end
+			end
+		end
+	end
+
+	game_state.tile_objects = {}
+	game_state.selected_path = {}
+
+	game_state.board = board_service.init({
+		dictionary = game_state.dictionary,
+		pattern = {7, 6, 7, 6, 7, 6, 7},
+		difficulty = 0.0,
+		target_letters = {"Б", "Д", "К", "У", "З"},
+		use_random_joker = true,
+		use_pity_joker = true
+	})
+
+	spawn_grid()
+	update_ui()
+	monarch.back()
+
+	print(board_service.debug_dump(game_state.board))
 end
 
 -- ──────────────────────────────────────────────────
