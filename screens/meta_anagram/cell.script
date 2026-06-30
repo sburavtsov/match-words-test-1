@@ -1,0 +1,15 @@
+go.property("letter", 32)
+
+function init(self)
+	label.set_text("#character", string.char(self.letter))
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("set_tint") then
+		go.set("#back", "tint", message.tint)
+	elseif message_id == hash("set_label_color") then
+		go.set("#character", "color", message.color)
+	elseif message_id == hash("set_letter") then
+		label.set_text("#character", message.letter)
+	end
+end

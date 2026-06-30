@@ -29,5 +29,10 @@ embedded_instances {
   "  id: \"script\"\n"
   "  component: \"/screens/meta_anagram/meta_anagram.script\"\n"
   "}\n"
+  "embedded_components {\n"
+  "  id: \"cell_factory\"\n"
+  "  type: \"factory\"\n"
+  "  data: \"prototype: \\\"/screens/meta_anagram/cell_factory.go\\\"\"\n"
+  "}\n"
   ""
 }

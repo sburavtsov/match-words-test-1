@@ -90,6 +90,7 @@ function init(self)
 	game_state.tile_factory = msg.url("#tile_factory")
 
 	msg.post(".", "acquire_input_focus")
+	msg.post("camera#camera", "acquire_camera_focus")
 
 	game_state.board = board_service.init({
 		dictionary = game_state.dictionary,
@@ -548,10 +549,30 @@ function on_message(self, message_id, message, sender)
 		game_state.hidden = true
 		msg.post("camera#camera", "release_camera_focus")
 		msg.post("hud#gui", "hide")
+		for x = 1, #game_state.tile_objects do
+			if game_state.tile_objects[x] then
+				for y = 1, #game_state.tile_objects[x] do
+					local obj = game_state.tile_objects[x][y]
+					if obj then
+						msg.post(obj, "disable")
+					end
+				end
+			end
+		end
 	elseif message_id == hash("show_game_core") then
 		game_state.hidden = false
 		msg.post("camera#camera", "acquire_camera_focus")
 		msg.post("hud#gui", "show")
+		for x = 1, #game_state.tile_objects do
+			if game_state.tile_objects[x] then
+				for y = 1, #game_state.tile_objects[x] do
+					local obj = game_state.tile_objects[x][y]
+					if obj then
+						msg.post(obj, "enable")
+					end
+				end
+			end
+		end
 	end
 end
 
