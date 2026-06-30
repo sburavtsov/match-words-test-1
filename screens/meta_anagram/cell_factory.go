@@ -10,7 +10,7 @@ embedded_components {
   "  y: 256.0\n"
   "}\n"
   "text: \"\\320\\256\"\n"
-  "font: \"/assets/fonts/anagram.font\"\n"
+  "font: \"/assets/fonts/unisans.font\"\n"
   "material: \"/builtins/fonts/label-df.material\"\n"
   ""
   position {
