@@ -3,14 +3,40 @@ local monarch = require("monarch.monarch")
 local nodes = {}
 local completed_rows = {}
 
+local SIZE_BUTTONS = { "3", "4", "5", "6" }
+
+local function highlight_size_button(size)
+	for _, lbl in ipairs(SIZE_BUTTONS) do
+		local btn = nodes["size_btn_" .. lbl]
+		local txt = nodes["size_text_" .. lbl]
+		if btn then
+			if tonumber(lbl) == size then
+				gui.set_color(btn, vmath.vector4(0.4, 0.7, 0.4, 1.0))
+				gui.set_color(txt, vmath.vector4(1, 1, 1, 1))
+			else
+				gui.set_color(btn, vmath.vector4(0.3, 0.3, 0.3, 0.8))
+				gui.set_color(txt, vmath.vector4(0.7, 0.7, 0.7, 1))
+			end
+		end
+	end
+end
+
 function init(self)
 	nodes.back_btn = gui.get_node("back_btn")
 	nodes.status_text = gui.get_node("status_text")
 	nodes.win_text = gui.get_node("win_text")
 	nodes.restart_btn = gui.get_node("restart_btn")
 	nodes.hint_text = gui.get_node("hint_text")
+	nodes.reset_btn = gui.get_node("reset_btn")
+
+	for _, lbl in ipairs(SIZE_BUTTONS) do
+		nodes["size_btn_" .. lbl] = gui.get_node("size_btn_" .. lbl)
+		nodes["size_text_" .. lbl] = gui.get_node("size_text_" .. lbl)
+	end
+
 	msg.post(".", "acquire_input_focus")
 	completed_rows = {}
+	highlight_size_button(4)
 end
 
 function on_message(self, message_id, message, sender)
@@ -20,12 +46,30 @@ function on_message(self, message_id, message, sender)
 		for _ in pairs(completed_rows) do
 			count = count + 1
 		end
-		gui.set_text(nodes.status_text, "Строка " .. message.row .. ": " .. message.word .. " ✓  (" .. count .. "/4)")
+		gui.set_text(nodes.status_text, "Строка " .. message.row .. ": " .. message.word .. " ✓  (" .. count .. "/" .. message.total .. ")")
+
 	elseif message_id == hash("game_won") then
 		gui.set_text(nodes.win_text, "Победа!")
 		gui.set_text(nodes.hint_text, "Все строки собраны!")
 		gui.set_enabled(nodes.restart_btn, true)
 		gui.set_visible(nodes.restart_btn, true)
+
+	elseif message_id == hash("reset_ui") then
+		gui.set_text(nodes.win_text, "")
+		gui.set_text(nodes.hint_text, "")
+		gui.set_text(nodes.status_text, "")
+		gui.set_visible(nodes.restart_btn, false)
+		gui.set_enabled(nodes.restart_btn, false)
+		completed_rows = {}
+
+	elseif message_id == hash("size_changed") then
+		gui.set_text(nodes.win_text, "")
+		gui.set_text(nodes.hint_text, "")
+		gui.set_text(nodes.status_text, "")
+		gui.set_visible(nodes.restart_btn, false)
+		gui.set_enabled(nodes.restart_btn, false)
+		completed_rows = {}
+		highlight_size_button(message.size)
 	end
 end
 
@@ -35,6 +79,11 @@ function on_input(self, action_id, action)
 			msg.post("main:/main#script", "show_game_core")
 			monarch.back()
 		end
+
+		if gui.pick_node(nodes.reset_btn, action.x, action.y) then
+			msg.post("controller#script", "reset_letters")
+		end
+
 		if gui.get_visible(nodes.restart_btn) and gui.pick_node(nodes.restart_btn, action.x, action.y) then
 			gui.set_text(nodes.win_text, "")
 			gui.set_text(nodes.hint_text, "")
@@ -43,6 +92,13 @@ function on_input(self, action_id, action)
 			completed_rows = {}
 			gui.set_text(nodes.status_text, "")
 			msg.post("controller#script", "restart")
+		end
+
+		for _, lbl in ipairs(SIZE_BUTTONS) do
+			if gui.pick_node(nodes["size_btn_" .. lbl], action.x, action.y) then
+				msg.post("controller#script", "set_grid_size", { size = tonumber(lbl) })
+				break
+			end
 		end
 	end
 end

@@ -1,14 +1,13 @@
 local csvloader = require("utils.csvloader")
 
-local GRID_SIZE = 4
-local CELL_SIZE = 80
-local GRID_START_X = -135
+local CELL_SIZE = 128
+local CELL_SCALE = 0.5
+local CELL_GAP = 2
+local CELL_STEP = CELL_SIZE * CELL_SCALE + CELL_GAP
 local GRID_START_Y = 200
 local TRAY_START_Y = -160
-local ROW_SPACING = 80
-local CARD_SCALE = 0.35
-local PICK_RADIUS = 45
-local BAR_SCALE_X = 3.5
+local ROW_SPACING = CELL_STEP
+local PICK_RADIUS = 32
 local BAR_SCALE_Y = 0.6
 local LETTER_Z = 0.2
 
@@ -17,12 +16,16 @@ local PASTEL_COLORS = {
 	vmath.vector4(0.75, 0.85, 1.0, 1.0),
 	vmath.vector4(0.75, 1.0, 0.8, 1.0),
 	vmath.vector4(1.0, 0.95, 0.7, 1.0),
+	vmath.vector4(0.85, 0.75, 1.0, 1.0),
+	vmath.vector4(1.0, 0.8, 0.9, 1.0),
 }
 local PASTEL_LABEL_COLORS = {
 	vmath.vector4(0.6, 0.2, 0.2, 1.0),
 	vmath.vector4(0.2, 0.3, 0.6, 1.0),
 	vmath.vector4(0.2, 0.5, 0.2, 1.0),
 	vmath.vector4(0.5, 0.4, 0.1, 1.0),
+	vmath.vector4(0.3, 0.2, 0.6, 1.0),
+	vmath.vector4(0.6, 0.2, 0.4, 1.0),
 }
 local COMPLETED_GRID_COLOR = vmath.vector4(0.6, 1.0, 0.6, 1.0)
 local COMPLETED_TRAY_COLOR = vmath.vector4(0.5, 0.8, 0.5, 1.0)
@@ -37,6 +40,7 @@ local state = {
 	row_completed = {},
 	completed_count = 0,
 	factory_url = nil,
+	grid_size = 4,
 }
 
 local function utf8_chars(s)
@@ -57,8 +61,13 @@ local function utf8_chars(s)
 	return out
 end
 
+local function grid_start_x()
+	local grid_width = state.grid_size * CELL_STEP - CELL_GAP
+	return -grid_width / 2
+end
+
 local function grid_cell_position(row, col)
-	local x = GRID_START_X + (col - 1) * (CELL_SIZE + 4)
+	local x = grid_start_x() + (col - 1) * CELL_STEP
 	local y = GRID_START_Y - (row - 1) * ROW_SPACING
 	return vmath.vector3(x, y, 0)
 end
@@ -75,19 +84,20 @@ end
 local function spawn_cell(row, col)
 	local pos = grid_cell_position(row, col)
 	local id = factory.create(state.factory_url, pos)
-	go.set_scale(CARD_SCALE, id)
+	go.set_scale(CELL_SCALE, id)
 	msg.post(id, "set_tint", { tint = PASTEL_COLORS[row] })
 	msg.post(id, "set_letter", { letter = "" })
 	return id
 end
 
 local function spawn_bar(row)
-	local grid_width = GRID_SIZE * (CELL_SIZE + 4) - 4
-	local cx = GRID_START_X + grid_width / 2
+	local grid_width = state.grid_size * CELL_STEP - CELL_GAP
+	local cx = grid_start_x() + grid_width / 2
 	local y = TRAY_START_Y - (row - 1) * ROW_SPACING
+	local sx = grid_width / (CELL_SIZE * CELL_SCALE)
 	local pos = vmath.vector3(cx, y, -0.1)
 	local id = factory.create(state.factory_url, pos)
-	go.set_scale(vmath.vector3(BAR_SCALE_X, BAR_SCALE_Y, 1), id)
+	go.set_scale(vmath.vector3(sx, BAR_SCALE_Y, 1), id)
 	msg.post(id, "set_tint", { tint = PASTEL_COLORS[row] })
 	msg.post(id, "set_letter", { letter = "" })
 	return id
@@ -96,7 +106,7 @@ end
 local function spawn_letter(row, letter)
 	local pos = vmath.vector3(0, 0, LETTER_Z)
 	local id = factory.create(state.factory_url, pos)
-	go.set_scale(CARD_SCALE, id)
+	go.set_scale(CELL_SCALE, id)
 	msg.post(id, "set_tint", { tint = vmath.vector4(1, 1, 1, 0) })
 	msg.post(id, "set_label_color", { color = PASTEL_LABEL_COLORS[row] })
 	msg.post(id, "set_letter", { letter = letter })
@@ -113,8 +123,8 @@ local function update_bar_layout(row)
 	local count = #on_bar
 	if count == 0 then return end
 
-	local bar_left = GRID_START_X
-	local bar_width = GRID_SIZE * (CELL_SIZE + 4)
+	local bar_left = grid_start_x()
+	local bar_width = state.grid_size * CELL_STEP
 	local spacing = bar_width / count
 
 	for j, idx in ipairs(on_bar) do
@@ -135,6 +145,15 @@ local function update_grid_visual(row, col)
 	end
 end
 
+local function reset_row_tint(row)
+	for col = 1, state.grid_size do
+		update_grid_visual(row, col)
+	end
+	if state.bars[row] then
+		msg.post(state.bars[row], "set_tint", { tint = PASTEL_COLORS[row] })
+	end
+end
+
 local function check_row_complete(row)
 	local grid_letters = {}
 	for _, letter in ipairs(state.letters[row]) do
@@ -142,13 +161,13 @@ local function check_row_complete(row)
 			grid_letters[letter.grid_col] = letter.letter
 		end
 	end
-	if #grid_letters < GRID_SIZE then return false end
-	for col = 1, GRID_SIZE do
+	if #grid_letters < state.grid_size then return false end
+	for col = 1, state.grid_size do
 		if not grid_letters[col] then return false end
 	end
 
 	local word_chars = {}
-	for col = 1, GRID_SIZE do
+	for col = 1, state.grid_size do
 		word_chars[col] = grid_letters[col]
 	end
 	local word = table.concat(word_chars)
@@ -160,7 +179,7 @@ local function complete_row(row, word)
 	state.puzzle_words[row] = word
 	state.completed_count = state.completed_count + 1
 
-	for col = 1, GRID_SIZE do
+	for col = 1, state.grid_size do
 		update_grid_visual(row, col)
 	end
 
@@ -168,15 +187,15 @@ local function complete_row(row, word)
 		msg.post(state.bars[row], "set_tint", { tint = COMPLETED_TRAY_COLOR })
 	end
 
-	msg.post("go#gui", "row_completed", { row = row, word = word })
+	msg.post("go#gui", "row_completed", { row = row, word = word, total = state.grid_size })
 
-	if state.completed_count >= GRID_SIZE then
+	if state.completed_count >= state.grid_size then
 		msg.post("go#gui", "game_won", {})
 	end
 end
 
 local function try_pickup(world_x, world_y)
-	for row = 1, GRID_SIZE do
+	for row = 1, state.grid_size do
 		if not state.row_completed[row] then
 			for i, letter in ipairs(state.letters[row]) do
 				local pos = go.get_position(letter.go_id)
@@ -191,7 +210,7 @@ local function try_pickup(world_x, world_y)
 						offset_x = world_x - pos.x,
 						offset_y = world_y - pos.y,
 					}
-					go.set_scale(CARD_SCALE * 1.2, letter.go_id)
+					go.set_scale(CELL_SCALE * 1.2, letter.go_id)
 					return true
 				end
 			end
@@ -207,12 +226,11 @@ local function try_drop(world_x, world_y)
 	local row = drag.row
 	local letter = state.letters[row][drag.letter_idx]
 
-	for grid_col = 1, GRID_SIZE do
+	for grid_col = 1, state.grid_size do
 		local pos = grid_cell_position(row, grid_col)
 		if world_x >= pos.x - PICK_RADIUS and world_x <= pos.x + PICK_RADIUS
 		and world_y >= pos.y - PICK_RADIUS and world_y <= pos.y + PICK_RADIUS then
 			local occupant = nil
-			-- find occupant in this grid cell
 			for _, l in ipairs(state.letters[row]) do
 				if l.grid_col == grid_col then
 					occupant = l
@@ -228,7 +246,7 @@ local function try_drop(world_x, world_y)
 			local grid_pos = grid_cell_position(row, grid_col)
 			grid_pos.z = LETTER_Z
 			go.set_position(grid_pos, letter.go_id)
-			go.set_scale(CARD_SCALE, letter.go_id)
+			go.set_scale(CELL_SCALE, letter.go_id)
 			state.dragging = nil
 
 			local result = check_row_complete(row)
@@ -239,7 +257,7 @@ local function try_drop(world_x, world_y)
 
 	letter.grid_col = nil
 	update_bar_layout(row)
-	go.set_scale(CARD_SCALE, letter.go_id)
+	go.set_scale(CELL_SCALE, letter.go_id)
 	state.dragging = nil
 end
 
@@ -249,22 +267,22 @@ local function pick_puzzle_words(csv_data)
 		local line = csv_data[i]
 		local word = line[1]
 		local flag = tonumber(line[4])
-		if word and #word == GRID_SIZE * 2 then
+		if word and #word == state.grid_size * 2 then
 			if flag == 0 or flag == 1 then
 				candidates[#candidates + 1] = word
 			end
 		end
 	end
 
-	if #candidates < GRID_SIZE then
-		print("ERROR: Not enough words of length " .. GRID_SIZE * 2 .. " in dictionary, found " .. #candidates)
+	if #candidates < state.grid_size then
+		print("ERROR: Not enough words of length " .. state.grid_size * 2 .. " in dictionary, found " .. #candidates)
 		return nil
 	end
 
 	shuffle(candidates)
 
 	local picked = {}
-	for i = 1, GRID_SIZE do
+	for i = 1, state.grid_size do
 		picked[i] = candidates[i]
 	end
 	return picked
@@ -276,13 +294,36 @@ local function build_valid_word_set(csv_data)
 		local line = csv_data[i]
 		local word = line[1]
 		local flag = tonumber(line[4])
-		if word and #word == GRID_SIZE * 2 then
+		if word and #word == state.grid_size * 2 then
 			if flag == 0 or flag == 1 then
 				valid[word] = true
 			end
 		end
 	end
 	return valid
+end
+
+local function delete_all_objects()
+	for row in pairs(state.grid) do
+		for col in pairs(state.grid[row]) do
+			if state.grid[row][col] then
+				go.delete(state.grid[row][col])
+			end
+		end
+		if state.letters[row] then
+			for _, letter in ipairs(state.letters[row]) do
+				if letter.go_id then
+					go.delete(letter.go_id)
+				end
+			end
+		end
+		if state.bars[row] then
+			go.delete(state.bars[row])
+		end
+	end
+	state.grid = {}
+	state.letters = {}
+	state.bars = {}
 end
 
 local function do_init(self)
@@ -301,14 +342,14 @@ local function do_init(self)
 	state.valid_words = build_valid_word_set(csv_data)
 	state.completed_count = 0
 
-	for row = 1, GRID_SIZE do
+	for row = 1, state.grid_size do
 		state.puzzle_words[row] = nil
 		state.row_completed[row] = false
 		state.grid[row] = {}
 		state.letters[row] = {}
 		state.bars[row] = nil
 
-		for col = 1, GRID_SIZE do
+		for col = 1, state.grid_size do
 			local cell_id = spawn_cell(row, col)
 			state.grid[row][col] = cell_id
 		end
@@ -320,7 +361,7 @@ local function do_init(self)
 		local letters = utf8_chars(word)
 		shuffle(letters)
 
-		for i = 1, GRID_SIZE do
+		for i = 1, state.grid_size do
 			local letter_id = spawn_letter(row, letters[i])
 			state.letters[row][i] = {
 				go_id = letter_id,
@@ -334,7 +375,7 @@ local function do_init(self)
 
 	msg.post("camera#camera", "acquire_camera_focus")
 	msg.post(".", "acquire_input_focus")
-	print("Anagram puzzle loaded. Words:", words[1], words[2], words[3], words[4])
+	print("Anagram puzzle loaded. Words: " .. table.concat(words, ", "))
 end
 
 function init(self)
@@ -346,7 +387,7 @@ function on_input(self, action_id, action)
 		return false
 	end
 
-	if state.completed_count >= GRID_SIZE then
+	if state.completed_count >= state.grid_size then
 		return false
 	end
 
@@ -382,21 +423,28 @@ end
 
 function on_message(self, message_id, message, sender)
 	if message_id == hash("restart") then
-		for row = 1, GRID_SIZE do
-			for col = 1, GRID_SIZE do
-				if state.grid[row][col] then
-					go.delete(state.grid[row][col])
-				end
-			end
-			for _, letter in ipairs(state.letters[row]) do
-				if letter.go_id then
-					go.delete(letter.go_id)
-				end
-			end
-			if state.bars[row] then
-				go.delete(state.bars[row])
-			end
-		end
+		delete_all_objects()
 		do_init(self)
+
+	elseif message_id == hash("reset_letters") then
+		for row = 1, state.grid_size do
+			state.row_completed[row] = false
+			state.puzzle_words[row] = nil
+			for _, letter in ipairs(state.letters[row]) do
+				letter.grid_col = nil
+			end
+			update_bar_layout(row)
+			reset_row_tint(row)
+		end
+		state.completed_count = 0
+		msg.post("go#gui", "reset_ui", {})
+
+	elseif message_id == hash("set_grid_size") then
+		local new_size = message.size
+		if new_size == state.grid_size then return end
+		delete_all_objects()
+		state.grid_size = new_size
+		do_init(self)
+		msg.post("go#gui", "size_changed", { size = new_size })
 	end
 end
