@@ -64,33 +64,15 @@ dictionary_service.RU_VOWELS = RU_VOWELS
 -- ── Низкоуровневые помощники ──────────────────────
 
 local function utf8_chars(s)
-	-- Разрезает UTF-8 строку на массив графем (без NFC, простая byte-by-byte).
-	if utils.utf8_chars then return utils.utf8_chars(s) end
 	local out = {}
-	local i = 1
-	local len = #s
-	while i <= len do
-		local b = string.byte(s, i)
-		local size
-		if b < 0x80 then size = 1
-		elseif b < 0xC0 then size = 1 -- битый, шагаем по байту
-		elseif b < 0xE0 then size = 2
-		elseif b < 0xF0 then size = 3
-		else size = 4 end
-		out[#out + 1] = string.sub(s, i, i + size - 1)
-		i = i + size
+	for _, cp in utf8.codes(s) do
+		out[#out + 1] = utf8.char(cp)
 	end
 	return out
 end
 
 local function utf8_len(s)
-	return #utf8_chars(s)
-end
-
-local function utf8_upper(s, force_ascii)
-	if force_ascii then return string.upper(s) end
-	-- Без полноценной локали — оставляем как есть для не-ASCII.
-	return string.upper(s)
+	return utf8.len(s) or #s
 end
 
 local function utf8_prefixes(chars, max_len, out)

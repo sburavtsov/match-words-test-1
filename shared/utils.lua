@@ -3,7 +3,7 @@ utils.lua
 
 Shared utility functions for the WordGame project.
 No state, no dependencies, just pure helper functions.
-Compatible with Defold's Lua 5.1 runtime.
+Compatible with Defold's Lua 5.1 runtime + defold-utf8 extension.
 ]]--
 
 local utils = {}
@@ -17,17 +17,7 @@ function utils.utf8_len(s)
 	if s == nil then
 		return 0
 	end
-
-	local ok, result = pcall(function()
-		return utf8.len(s)
-	end)
-
-	if ok and result then
-		return result
-	end
-
-	-- Fallback for ASCII-only environments.
-	return #s
+	return utf8.len(s) or #s
 end
 
 -- UTF-8 substring by character indices (1-based).
@@ -35,43 +25,7 @@ function utils.utf8_sub(s, i, j)
 	if s == nil or s == "" then
 		return ""
 	end
-
-	local len = utils.utf8_len(s)
-	i = i or 1
-	j = j or len
-
-	if i < 1 then
-		i = 1
-	end
-	if j > len then
-		j = len
-	end
-	if i > j then
-		return ""
-	end
-
-	-- In Defold's Lua 5.1, utf8 module might not be available.
-	-- If available, use utf8.offset. Otherwise use simple byte scan.
-	local start_byte, end_byte
-
-	if utf8 and utf8.offset then
-		start_byte = utf8.offset(s, i)
-		end_byte = utf8.offset(s, j + 1)
-	else
-		-- Simple byte scan (works correctly for 1-byte chars, i.e. ASCII + Latin).
-		start_byte = i
-		end_byte = j + 1
-	end
-
-	if not start_byte then
-		return ""
-	end
-
-	if end_byte then
-		return s:sub(start_byte, end_byte - 1)
-	else
-		return s:sub(start_byte)
-	end
+	return utf8.sub(s, i, j)
 end
 
 -- Count occurrences of a plain substring.
