@@ -1,5 +1,4 @@
 -- game.script
-require("shared.utf8")
 local board_service = require("services.board_service")
 local move_resolver = require("services.move_resolver")
 local dictionary_service = require("services.dictionary_service")
