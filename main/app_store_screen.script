@@ -1,14 +1,13 @@
 local monarch
 
 go.property("screen_proxy", msg.url("#collectionproxy"))
-go.property("screen_id", hash("meta_anagram"))
+go.property("screen_id", hash("app_store"))
 go.property("popup", false)
 go.property("popup_on_popup", false)
 go.property("timestep_below_popup", 1)
 go.property("screen_keeps_input_focus_when_below_popup", false)
 go.property("others_keep_input_focus_when_below_screen", false)
 go.property("preload", false)
-
 
 function init(self)
 	monarch = require("monarch.monarch")
@@ -38,7 +37,6 @@ function on_message(self, message_id, message, sender)
 	elseif message_id == hash("hide") then
 		monarch.back()
 	elseif message_id == hash("back") then
-		msg.post("main:/main#script", "show_game_core")
 		monarch.back()
 	else
 		monarch.on_message(message_id, message, sender)

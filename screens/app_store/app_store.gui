@@ -1,0 +1,60 @@
+script: "/screens/app_store/app_store.gui_script"
+fonts {
+  name: "rum"
+  font: "/assets/fonts/rum.font"
+}
+nodes {
+  position {
+    x: 60.0
+    y: 1080.0
+  }
+  size {
+    x: 100.0
+    y: 40.0
+  }
+  color {
+    x: 0.3
+    y: 0.3
+    z: 0.3
+    w: 0.8
+  }
+  type: TYPE_BOX
+  id: "back_btn"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    z: 0.2
+  }
+  size {
+    x: 50.0
+    y: 20.0
+  }
+  type: TYPE_TEXT
+  text: "Back"
+  font: "rum"
+  id: "back_text"
+  parent: "back_btn"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 320.0
+    y: 1040.0
+  }
+  scale {
+    x: 2.5
+    y: 2.5
+  }
+  size {
+    x: 150.0
+    y: 30.0
+  }
+  type: TYPE_TEXT
+  text: "App Store"
+  font: "rum"
+  id: "title"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

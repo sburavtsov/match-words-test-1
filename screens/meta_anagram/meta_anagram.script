@@ -427,6 +427,7 @@ function on_message(self, message_id, message, sender)
 		do_init(self)
 
 	elseif message_id == hash("reset_letters") then
+		state.dragging = nil
 		for row = 1, state.grid_size do
 			state.row_completed[row] = false
 			state.puzzle_words[row] = nil

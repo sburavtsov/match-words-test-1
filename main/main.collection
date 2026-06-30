@@ -66,3 +66,16 @@ embedded_instances {
   "}\n"
   ""
 }
+embedded_instances {
+  id: "app_store"
+  data: "components {\n"
+  "  id: \"script\"\n"
+  "  component: \"/main/app_store_screen.script\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"collectionproxy\"\n"
+  "  type: \"collectionproxy\"\n"
+  "  data: \"collection: \\\"/screens/app_store/app_store.collection\\\"\"\n"
+  "}\n"
+  ""
+}

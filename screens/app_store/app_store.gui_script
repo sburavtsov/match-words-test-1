@@ -1,0 +1,17 @@
+local monarch = require("monarch.monarch")
+
+local nodes = {}
+
+function init(self)
+	nodes.back_btn = gui.get_node("back_btn")
+	msg.post(".", "acquire_input_focus")
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("touch") and action.released then
+		if gui.pick_node(nodes.back_btn, action.x, action.y) then
+			msg.post("main:/main#script", "show_game_core")
+			monarch.hide("app_store")
+		end
+	end
+end

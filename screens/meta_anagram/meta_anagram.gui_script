@@ -76,12 +76,13 @@ end
 function on_input(self, action_id, action)
 	if action_id == hash("touch") and action.released then
 		if gui.pick_node(nodes.back_btn, action.x, action.y) then
-			msg.post("main:/main#script", "show_game_core")
-			monarch.back()
+			msg.post("main:/meta_anagram#script", "back")
+			return true
 		end
 
 		if gui.pick_node(nodes.reset_btn, action.x, action.y) then
 			msg.post("controller#script", "reset_letters")
+			return true
 		end
 
 		if gui.get_visible(nodes.restart_btn) and gui.pick_node(nodes.restart_btn, action.x, action.y) then
@@ -92,12 +93,13 @@ function on_input(self, action_id, action)
 			completed_rows = {}
 			gui.set_text(nodes.status_text, "")
 			msg.post("controller#script", "restart")
+			return true
 		end
 
 		for _, lbl in ipairs(SIZE_BUTTONS) do
 			if gui.pick_node(nodes["size_btn_" .. lbl], action.x, action.y) then
 				msg.post("controller#script", "set_grid_size", { size = tonumber(lbl) })
-				break
+				return true
 			end
 		end
 	end
