@@ -1,3 +1,4 @@
+local monarch = require("monarch.monarch")
 local nodes = {}
 
 local function update_value_text(self)
@@ -21,6 +22,7 @@ function init(self)
 	nodes.slider_track = gui.get_node("slider_track")
 	nodes.slider_thumb = gui.get_node("slider_thumb")
 	nodes.restart_btn = gui.get_node("restart_btn")
+	nodes.anagramm_btn = gui.get_node("anagramm_btn")
 
 	local track_pos = gui.get_position(nodes.slider_track)
 	local track_size = gui.get_size(nodes.slider_track)
@@ -31,12 +33,14 @@ function init(self)
 	self.slider_value_num = 0.0
 	gui.set_position(nodes.slider_thumb, vmath.vector3(self.slider_min_x, self.slider_y, 0.1))
 	update_value_text(self)
+	self.hidden = false
 
 	msg.post(".", "acquire_input_focus")
 end
 
 function on_message(self, message_id, message, sender)
 	if message_id == hash("update_hud") then
+		if self.hidden then return end
 		local active_str = ""
 		if message.active_targets and #message.active_targets > 0 then
 			for i = 1, #message.active_targets do
@@ -69,6 +73,28 @@ function on_message(self, message_id, message, sender)
 
 		local difficulty = message.difficulty or 0.0
 		set_slider_position(self, difficulty)
+	elseif message_id == hash("hide") then
+		self.hidden = true
+		gui.set_enabled(nodes.targets_text, false)
+		gui.set_enabled(nodes.moves_text, false)
+		gui.set_enabled(nodes.pending_text, false)
+		gui.set_enabled(nodes.word_text, false)
+		gui.set_enabled(nodes.difficulty_label, false)
+		gui.set_enabled(nodes.slider_track, false)
+		gui.set_enabled(nodes.slider_thumb, false)
+		gui.set_enabled(nodes.restart_btn, false)
+		gui.set_enabled(nodes.anagramm_btn, false)
+	elseif message_id == hash("show") then
+		self.hidden = false
+		gui.set_enabled(nodes.targets_text, true)
+		gui.set_enabled(nodes.moves_text, true)
+		gui.set_enabled(nodes.pending_text, true)
+		gui.set_enabled(nodes.word_text, true)
+		gui.set_enabled(nodes.difficulty_label, true)
+		gui.set_enabled(nodes.slider_track, true)
+		gui.set_enabled(nodes.slider_thumb, true)
+		gui.set_enabled(nodes.restart_btn, true)
+		gui.set_enabled(nodes.anagramm_btn, true)
 	end
 end
 
@@ -77,6 +103,9 @@ function on_input(self, action_id, action)
 		if action.released then
 			if not self.dragging and gui.pick_node(nodes.restart_btn, action.x, action.y) then
 				msg.post("main:/main#script", "restart", { difficulty = self.slider_value_num })
+			elseif not self.dragging and gui.pick_node(nodes.anagramm_btn, action.x, action.y) then
+				msg.post("main:/main#script", "hide_game_core")
+				monarch.show("meta_anagram", { clear = true })
 			end
 			self.dragging = false
 		elseif action.pressed then

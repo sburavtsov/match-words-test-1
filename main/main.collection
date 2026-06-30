@@ -9,8 +9,7 @@ embedded_instances {
   "embedded_components {\n"
   "  id: \"tile_factory\"\n"
   "  type: \"factory\"\n"
-  "  data: \"prototype: \\\"/main/factories/tile_factory.go\\\"\\n"
-  "\"\n"
+  "  data: \"prototype: \\\"/main/factories/tile_factory.go\\\"\\n\"\n"
   "}\n"
   ""
 }
@@ -51,6 +50,32 @@ embedded_instances {
   "  id: \"collectionfactory\"\n"
   "  type: \"collectionfactory\"\n"
   "  data: \"prototype: \\\"/popups/win_popup/win_popup.collection\\\"\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "game_meta_anagramm"
+  data: "components {\n"
+  "  id: \"script\"\n"
+  "  component: \"/main/game_meta_anagramm_screen.script\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"collectionproxy\"\n"
+  "  type: \"collectionproxy\"\n"
+  "  data: \"collection: \\\"/screens/game_meta_anagramm/game_meta_anagramm.collection\\\"\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "meta_anagram"
+  data: "components {\n"
+  "  id: \"script\"\n"
+  "  component: \"/main/meta_anagram_screen.script\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"collectionproxy\"\n"
+  "  type: \"collectionproxy\"\n"
+  "  data: \"collection: \\\"/screens/meta_anagram/meta_anagram.collection\\\"\"\n"
   "}\n"
   ""
 }

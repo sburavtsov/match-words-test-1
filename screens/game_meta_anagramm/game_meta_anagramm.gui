@@ -1,0 +1,158 @@
+script: "/screens/game_meta_anagramm/game_meta_anagramm.gui_script"
+fonts {
+  name: "rum"
+  font: "/assets/fonts/rum.font"
+}
+nodes {
+  position {
+    x: 60.0
+    y: 1080.0
+  }
+  size {
+    x: 100.0
+    y: 40.0
+  }
+  color {
+    x: 0.3
+    y: 0.3
+    z: 0.3
+    w: 0.8
+  }
+  type: TYPE_BOX
+  id: "back_btn"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    z: 0.2
+  }
+  size {
+    x: 50.0
+    y: 20.0
+  }
+  type: TYPE_TEXT
+  text: "Back"
+  font: "rum"
+  id: "back_text"
+  parent: "back_btn"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 320.0
+    y: 1040.0
+  }
+  scale {
+    x: 2.5
+    y: 2.5
+  }
+  size {
+    x: 50.0
+    y: 30.0
+  }
+  type: TYPE_TEXT
+  text: "Word Squares"
+  font: "rum"
+  id: "title"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 320.0
+    y: 780.0
+  }
+  size {
+    x: 300.0
+    y: 30.0
+  }
+  type: TYPE_TEXT
+  text: ""
+  font: "rum"
+  id: "status_text"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 320.0
+    y: 580.0
+  }
+  scale {
+    x: 3.0
+    y: 3.0
+  }
+  color {
+    x: 0.2
+    y: 0.8
+    z: 0.2
+  }
+  size {
+    x: 50.0
+    y: 30.0
+  }
+  type: TYPE_TEXT
+  text: ""
+  font: "rum"
+  id: "win_text"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 320.0
+    y: 520.0
+  }
+  size {
+    x: 150.0
+    y: 50.0
+  }
+  color {
+    x: 0.2
+    y: 0.6
+    z: 0.2
+    w: 0.9
+  }
+  type: TYPE_BOX
+  id: "restart_btn"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    z: 0.2
+  }
+  size {
+    x: 50.0
+    y: 20.0
+  }
+  type: TYPE_TEXT
+  text: "Restart"
+  font: "rum"
+  id: "restart_text"
+  parent: "restart_btn"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 320.0
+    y: 460.0
+  }
+  scale {
+    x: 2.0
+    y: 2.0
+  }
+  color {
+    x: 0.3
+    y: 0.3
+    z: 0.3
+  }
+  size {
+    x: 50.0
+    y: 20.0
+  }
+  type: TYPE_TEXT
+  text: ""
+  font: "rum"
+  id: "hint_text"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
