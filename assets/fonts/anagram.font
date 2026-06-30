@@ -1,0 +1,5 @@
+font: "/assets/fonts/Rum Raisin Cyrillic/rumraisincyrillic.otf"
+material: "/builtins/fonts/font-df.material"
+size: 30
+output_format: TYPE_DISTANCE_FIELD
+all_chars: true

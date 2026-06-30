@@ -27,7 +27,8 @@ local game_state = {
 	tile_objects = {},     -- map[x][y] = url(go)
 	is_animating = false,   -- блокировка ввода во время анимации
 	mouse_down = false,    -- зажат ли тач/клик
-	tile_factory = nil     -- url фабрики тайлов
+	hidden = false,         -- скрыт ли game_core экран
+	tile_factory = nil,    -- URL компонента tile_factory
 }
 
 -- ──────────────────────────────────────────────────
@@ -79,41 +80,28 @@ end
 
 
 function init(self)
-	-- Инициализируем генератор случайных чисел
 	math.randomseed(math.floor(socket.gettime() * 1000000))
 
-	-- 1. Загружаем словарь
 	game_state.dictionary = dictionary_service.init({
 		csv_path = "/custom_resources/words/WordList_RU.csv",
 		alphabet = dictionary_service.RU_ALPHABET
-})
+	})
 
-	-- 2. Создаем игровое поле
-	game_state.difficulty = 0.0
+	game_state.tile_factory = msg.url("#tile_factory")
+
+	msg.post(".", "acquire_input_focus")
+	msg.post("camera#camera", "acquire_camera_focus")
+
 	game_state.board = board_service.init({
 		dictionary = game_state.dictionary,
 		pattern = {7, 6, 7, 6, 7, 6, 7, 6, 7},
-		difficulty = game_state.difficulty,
-		--target_letters = {"A", "S", "D", "F", "G", "H"},
+		difficulty = 0.0,
 		target_letters = {"Б", "Д", "К", "У", "З"},
-		
 		use_random_joker = true,
 		use_mercy_joker = true
 	})
-
-	-- 3. Захватываем ввод
-	msg.post(".", "acquire_input_focus")
-
-	-- 4. Спавним визуальные тайлы
-	game_state.tile_factory = msg.url("#tile_factory")
-	--self.selected_marker = msg.url("main:/factories#selected_marker")
-
 	spawn_grid()
-
-	-- 5. Обновляем UI
 	update_ui()
-
-	print(board_service.debug_dump(game_state.board))
 end
 
 
@@ -214,6 +202,10 @@ function on_input(self, action_id, action)
 
 	if game_state.is_animating then
 		return true
+	end
+
+	if game_state.hidden then
+		return false
 	end
 
 	if action_id == hash("touch") then
@@ -553,6 +545,34 @@ function on_message(self, message_id, message, sender)
 		restart_game(message.difficulty)
 	elseif message_id == hash("set_difficulty") then
 		game_state.difficulty = message.difficulty
+	elseif message_id == hash("hide_game_core") then
+		game_state.hidden = true
+		msg.post("camera#camera", "release_camera_focus")
+		msg.post("hud#gui", "hide")
+		for x = 1, #game_state.tile_objects do
+			if game_state.tile_objects[x] then
+				for y = 1, #game_state.tile_objects[x] do
+					local obj = game_state.tile_objects[x][y]
+					if obj then
+						msg.post(obj, "disable")
+					end
+				end
+			end
+		end
+	elseif message_id == hash("show_game_core") then
+		game_state.hidden = false
+		msg.post("camera#camera", "acquire_camera_focus")
+		msg.post("hud#gui", "show")
+		for x = 1, #game_state.tile_objects do
+			if game_state.tile_objects[x] then
+				for y = 1, #game_state.tile_objects[x] do
+					local obj = game_state.tile_objects[x][y]
+					if obj then
+						msg.post(obj, "enable")
+					end
+				end
+			end
+		end
 	end
 end
 
