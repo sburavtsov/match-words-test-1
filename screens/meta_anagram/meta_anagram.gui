@@ -39,6 +39,40 @@ nodes {
 }
 nodes {
   position {
+    x: 200.0
+    y: 1080.0
+  }
+  size {
+    x: 100.0
+    y: 40.0
+  }
+  color {
+    x: 0.4
+    y: 0.2
+    z: 0.2
+    w: 0.8
+  }
+  type: TYPE_BOX
+  id: "reset_btn"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    z: 0.2
+  }
+  size {
+    x: 50.0
+    y: 20.0
+  }
+  type: TYPE_TEXT
+  text: "Reset"
+  font: "rum"
+  id: "reset_text"
+  parent: "reset_btn"
+  inherit_alpha: true
+}
+nodes {
+  position {
     x: 320.0
     y: 1040.0
   }
@@ -54,6 +88,157 @@ nodes {
   text: "Анаграммы"
   font: "rum"
   id: "title"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 90.0
+    y: 990.0
+  }
+  size {
+    x: 80.0
+    y: 30.0
+  }
+  type: TYPE_TEXT
+  text: "Размер:"
+  font: "rum"
+  id: "size_label"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 175.0
+    y: 990.0
+  }
+  size {
+    x: 50.0
+    y: 36.0
+  }
+  color {
+    x: 0.3
+    y: 0.3
+    z: 0.3
+    w: 0.8
+  }
+  type: TYPE_BOX
+  id: "size_btn_3"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    z: 0.2
+  }
+  size {
+    x: 50.0
+    y: 20.0
+  }
+  type: TYPE_TEXT
+  text: "3"
+  font: "rum"
+  id: "size_text_3"
+  parent: "size_btn_3"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 235.0
+    y: 990.0
+  }
+  size {
+    x: 50.0
+    y: 36.0
+  }
+  color {
+    x: 0.3
+    y: 0.3
+    z: 0.3
+    w: 0.8
+  }
+  type: TYPE_BOX
+  id: "size_btn_4"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    z: 0.2
+  }
+  size {
+    x: 50.0
+    y: 20.0
+  }
+  type: TYPE_TEXT
+  text: "4"
+  font: "rum"
+  id: "size_text_4"
+  parent: "size_btn_4"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 295.0
+    y: 990.0
+  }
+  size {
+    x: 50.0
+    y: 36.0
+  }
+  color {
+    x: 0.3
+    y: 0.3
+    z: 0.3
+    w: 0.8
+  }
+  type: TYPE_BOX
+  id: "size_btn_5"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    z: 0.2
+  }
+  size {
+    x: 50.0
+    y: 20.0
+  }
+  type: TYPE_TEXT
+  text: "5"
+  font: "rum"
+  id: "size_text_5"
+  parent: "size_btn_5"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 355.0
+    y: 990.0
+  }
+  size {
+    x: 50.0
+    y: 36.0
+  }
+  color {
+    x: 0.3
+    y: 0.3
+    z: 0.3
+    w: 0.8
+  }
+  type: TYPE_BOX
+  id: "size_btn_6"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    z: 0.2
+  }
+  size {
+    x: 50.0
+    y: 20.0
+  }
+  type: TYPE_TEXT
+  text: "6"
+  font: "rum"
+  id: "size_text_6"
+  parent: "size_btn_6"
   inherit_alpha: true
 }
 nodes {
