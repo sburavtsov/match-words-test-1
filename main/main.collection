@@ -54,19 +54,6 @@ embedded_instances {
   ""
 }
 embedded_instances {
-  id: "game_meta_anagramm"
-  data: "components {\n"
-  "  id: \"script\"\n"
-  "  component: \"/main/game_meta_anagramm_screen.script\"\n"
-  "}\n"
-  "embedded_components {\n"
-  "  id: \"collectionproxy\"\n"
-  "  type: \"collectionproxy\"\n"
-  "  data: \"collection: \\\"/screens/game_meta_anagramm/game_meta_anagramm.collection\\\"\"\n"
-  "}\n"
-  ""
-}
-embedded_instances {
   id: "meta_anagram"
   data: "components {\n"
   "  id: \"script\"\n"
